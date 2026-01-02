@@ -1,0 +1,11 @@
+plant_id,plant_name,plant_type,location_lat,location_lon,capacity
+IU001,Mumbai Integrated Unit,IU,19.0760,72.8777,100000
+IU002,Kolkata Integrated Unit,IU,22.5726,88.3639,120000
+IU003,Singrauli Integrated Unit,IU,24.1833,81.8833,110000
+IU004,Gujarat Integrated Unit,IU,23.0225,72.5714,105000
+GU001,Delhi Grinding Unit,GU,28.6139,77.2090,50000
+GU002,Hyderabad Grinding Unit,GU,17.3850,78.4867,55000
+GU003,Chennai Grinding Unit,GU,13.0827,80.2707,52000
+GU004,Bangalore Grinding Unit,GU,12.9716,77.5946,48000
+GU005,Pune Grinding Unit,GU,18.5204,73.8567,45000
+GU006,Ahmedabad Grinding Unit,GU,23.0225,72.5714,50000

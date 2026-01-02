@@ -1,0 +1,268 @@
+# ==================== PYTHON BACKEND ====================
+
+# Virtual Environment
+backend/venv/
+backend/env/
+backend/.venv/
+backend/.env/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+__pycache__/
+*.pyc
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Backend logs
+backend/logs/
+backend/*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Exports (generated files)
+backend/exports/*
+!backend/exports/.gitkeep
+
+# ==================== NEXT.JS FRONTEND ====================
+
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.*
+frontend/.yarn/*
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
+
+# Testing
+frontend/coverage/
+frontend/.nyc_output
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Production
+frontend/dist/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Vercel
+frontend/.vercel
+
+# TypeScript
+*.tsbuildinfo
+frontend/next-env.d.ts
+
+# ESLint
+.eslintcache
+
+# ==================== IDEs & EDITORS ====================
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ==================== OPERATING SYSTEMS ====================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+.directory
+.Trash-*
+.nfs*
+
+# ==================== PROJECT SPECIFIC ====================
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~.nib
+*.orig
+
+# Logs
+logs/
+*.log
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Backup files
+*.backup
+*.old
+
+# Archive files (if created for deployment)
+*.zip
+*.tar.gz
+*.rar
+
+# Local configuration
+local_settings.py
+config.local.py
+
+# Optimization solver outputs
+*.lp
+*.mps
+*.sol
+
+# Data files that are too large (uncomment if needed)
+# data/large_dataset.csv
+# *.csv
+
+# Secrets and credentials (IMPORTANT!)
+secrets.json
+credentials.json
+*.key
+*.pem
+*.p12
+*.pfx
+service-account.json
+
+# ==================== CI/CD ====================
+
+# GitHub Actions
+.github/workflows/*.log
+
+# Docker (if added later)
+docker-compose.override.yml
+.docker/
+
+# ==================== KEEP THESE FILES ====================
+
+# Keep empty directories with .gitkeep
+!**/.gitkeep
+
+# Keep README files
+!**/README.md
+
+# Keep example/template files
+!**/*.example
+!**/*.template
