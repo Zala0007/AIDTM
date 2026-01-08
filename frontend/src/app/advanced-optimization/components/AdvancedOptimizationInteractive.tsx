@@ -79,6 +79,7 @@ const AdvancedOptimizationInteractive = () => {
   const [selectedDestination, setSelectedDestination] = useState<string>('');
   const [selectedMode, setSelectedMode] = useState<string>('');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('');
+  const [selectedPriority, setSelectedPriority] = useState<string>('medium');
   
   // Route data
   const [routeData, setRouteData] = useState<any>(null);
@@ -120,6 +121,7 @@ const AdvancedOptimizationInteractive = () => {
           sheets: data.sheets_found || [],
           total_routes: data.total_routes || 0,
           total_plants: data.total_plants || 0,
+          total_periods: data.total_periods || 0,
           periods: data.periods || []
         });
         await fetchSources();
@@ -149,6 +151,7 @@ const AdvancedOptimizationInteractive = () => {
           sheets: data.sheets_found || [],
           total_routes: data.total_routes || 0,
           total_plants: data.total_plants || 0,
+          total_periods: data.total_periods || 0,
           periods: data.periods || []
         });
         setSelectedSource('');
@@ -259,6 +262,30 @@ const AdvancedOptimizationInteractive = () => {
   const handlePeriodChange = (value: string) => {
     setSelectedPeriod(value);
     setRouteData(null);
+  };
+
+  const handleClearSelections = () => {
+    setSelectedSource('');
+    setSelectedDestination('');
+    setSelectedMode('');
+    setSelectedPeriod('');
+    setSelectedPriority('medium');
+    setRouteData(null);
+    setDestinations([]);
+    setModes([]);
+  };
+
+  const getSelectionCount = () => {
+    let count = 0;
+    if (selectedSource) count++;
+    if (selectedDestination) count++;
+    if (selectedMode) count++;
+    if (selectedPeriod) count++;
+    return count;
+  };
+
+  const isSelectionComplete = () => {
+    return selectedSource && selectedDestination && selectedMode && selectedPeriod;
   };
 
   useEffect(() => {
@@ -541,23 +568,56 @@ const AdvancedOptimizationInteractive = () => {
                   <div className="flex items-center gap-3">
                     <Icon name="map-pin" className="w-6 h-6 text-accent" />
                     <h2 className="text-xl font-heading font-bold text-foreground">Route Selection</h2>
+                    {/* Selection Progress Indicator */}
+                    <div className="flex items-center gap-2">
+                      <div className="px-3 py-1 bg-primary/10 rounded-full">
+                        <span className="text-xs font-bold text-primary">
+                          {getSelectionCount()}/4 Selected
+                        </span>
+                      </div>
+                      {isSelectionComplete() && (
+                        <div className="flex items-center gap-1 px-2 py-1 bg-success/10 rounded-full">
+                          <Icon name="check-circle" className="w-3 h-3 text-success" />
+                          <span className="text-xs font-semibold text-success">Complete</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-lg">
-                    <Icon name="chart-bar" className="w-4 h-4 text-accent" />
-                    <span className="text-xs font-semibold text-accent">
-                      Options from uploaded Excel only
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-lg">
+                      <Icon name="chart-bar" className="w-4 h-4 text-accent" />
+                      <span className="text-xs font-semibold text-accent">
+                        Options from uploaded Excel only
+                      </span>
+                    </div>
+                    {getSelectionCount() > 0 && (
+                      <button
+                        onClick={handleClearSelections}
+                        className="flex items-center gap-2 px-4 py-2 bg-error/10 hover:bg-error/20 text-error rounded-lg transition-all"
+                      >
+                        <Icon name="x-mark" className="w-4 h-4" />
+                        <span className="text-xs font-semibold">Clear All</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-6">
+                {/* Main Selection Grid */}
+                <div className="grid grid-cols-4 gap-6 mb-6">
                   {/* Source */}
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                      SOURCE PLANT (IU)
-                    </label>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        SOURCE PLANT (IU)
+                      </label>
+                      {selectedSource && (
+                        <Icon name="check-circle" className="w-4 h-4 text-success" />
+                      )}
+                    </div>
                     <select
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground font-medium focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+                      className={`w-full px-4 py-3 rounded-lg border-2 bg-background text-foreground font-medium focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all ${
+                        selectedSource ? 'border-success' : 'border-border'
+                      }`}
                       value={selectedSource}
                       onChange={(e) => handleSourceChange(e.target.value)}
                       disabled={sources.length === 0}
@@ -570,15 +630,25 @@ const AdvancedOptimizationInteractive = () => {
                     {sources.length === 0 && (
                       <p className="mt-2 text-xs text-muted-foreground italic">{NOT_AVAILABLE}</p>
                     )}
+                    {selectedSource && (
+                      <p className="mt-2 text-xs text-success font-medium">✓ Source selected</p>
+                    )}
                   </div>
 
                   {/* Destination */}
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                      DESTINATION PLANT
-                    </label>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        DESTINATION PLANT
+                      </label>
+                      {selectedDestination && (
+                        <Icon name="check-circle" className="w-4 h-4 text-success" />
+                      )}
+                    </div>
                     <select
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground font-medium focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
+                      className={`w-full px-4 py-3 rounded-lg border-2 bg-background text-foreground font-medium focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50 ${
+                        selectedDestination ? 'border-success' : 'border-border'
+                      }`}
                       value={selectedDestination}
                       onChange={(e) => handleDestinationChange(e.target.value)}
                       disabled={!selectedSource || destinations.length === 0}
@@ -588,18 +658,31 @@ const AdvancedOptimizationInteractive = () => {
                         <option key={d} value={d}>{d}</option>
                       ))}
                     </select>
+                    {!selectedSource && (
+                      <p className="mt-2 text-xs text-warning italic">⚠ Select source first</p>
+                    )}
                     {selectedSource && destinations.length === 0 && (
-                      <p className="mt-2 text-xs text-warning">{NOT_AVAILABLE}</p>
+                      <p className="mt-2 text-xs text-warning">⚠ No destinations available</p>
+                    )}
+                    {selectedDestination && (
+                      <p className="mt-2 text-xs text-success font-medium">✓ Destination selected</p>
                     )}
                   </div>
 
                   {/* Transport Mode */}
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                      TRANSPORT MODE
-                    </label>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        TRANSPORT MODE
+                      </label>
+                      {selectedMode && (
+                        <Icon name="check-circle" className="w-4 h-4 text-success" />
+                      )}
+                    </div>
                     <select
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground font-medium focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
+                      className={`w-full px-4 py-3 rounded-lg border-2 bg-background text-foreground font-medium focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50 ${
+                        selectedMode ? 'border-success' : 'border-border'
+                      }`}
                       value={selectedMode}
                       onChange={(e) => handleModeChange(e.target.value)}
                       disabled={!selectedDestination || modes.length === 0}
@@ -611,15 +694,28 @@ const AdvancedOptimizationInteractive = () => {
                         </option>
                       ))}
                     </select>
+                    {!selectedDestination && (
+                      <p className="mt-2 text-xs text-warning italic">⚠ Select destination first</p>
+                    )}
+                    {selectedMode && (
+                      <p className="mt-2 text-xs text-success font-medium">✓ Mode selected</p>
+                    )}
                   </div>
 
                   {/* Period */}
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                      TIME PERIOD
-                    </label>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        TIME PERIOD
+                      </label>
+                      {selectedPeriod && (
+                        <Icon name="check-circle" className="w-4 h-4 text-success" />
+                      )}
+                    </div>
                     <select
-                      className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground font-medium focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
+                      className={`w-full px-4 py-3 rounded-lg border-2 bg-background text-foreground font-medium focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50 ${
+                        selectedPeriod ? 'border-success' : 'border-border'
+                      }`}
                       value={selectedPeriod}
                       onChange={(e) => handlePeriodChange(e.target.value)}
                       disabled={periods.length === 0}
@@ -629,6 +725,77 @@ const AdvancedOptimizationInteractive = () => {
                         <option key={p} value={p}>Period {p}</option>
                       ))}
                     </select>
+                    {selectedPeriod && (
+                      <p className="mt-2 text-xs text-success font-medium">✓ Period selected</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Additional Parameters Row */}
+                <div className="grid grid-cols-4 gap-6 pt-6 border-t border-border">
+                  {/* Priority Level - NEW FIELD */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        PRIORITY LEVEL
+                      </label>
+                      <div className="px-2 py-0.5 bg-primary/10 rounded text-[10px] font-bold text-primary">
+                        NEW
+                      </div>
+                    </div>
+                    <select
+                      className="w-full px-4 py-3 rounded-lg border-2 border-primary/30 bg-background text-foreground font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      value={selectedPriority}
+                      onChange={(e) => setSelectedPriority(e.target.value)}
+                    >
+                      <option value="critical">🔴 Critical</option>
+                      <option value="high">🟠 High</option>
+                      <option value="medium">🟡 Medium</option>
+                      <option value="low">🟢 Low</option>
+                    </select>
+                    <p className="mt-2 text-xs text-muted-foreground">Affects optimization weight</p>
+                  </div>
+
+                  {/* Route Summary - Shows current selection */}
+                  <div className="col-span-3">
+                    <label className="block text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                      SELECTED ROUTE SUMMARY
+                    </label>
+                    <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-accent/5 to-primary/5 rounded-lg border-2 border-accent/20">
+                      {selectedSource || selectedDestination || selectedMode || selectedPeriod ? (
+                        <>
+                          <div className="flex items-center gap-2 font-mono text-sm">
+                            <span className="font-bold text-accent">{selectedSource || '___'}</span>
+                            <Icon name="arrow-right" className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-bold text-accent">{selectedDestination || '___'}</span>
+                          </div>
+                          <div className="h-6 w-px bg-border" />
+                          <div className="flex items-center gap-2">
+                            <Icon name="building-office-2" className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-medium text-foreground">
+                              {selectedMode ? modes.find(m => m.code === selectedMode)?.name || selectedMode : 'No mode'}
+                            </span>
+                          </div>
+                          <div className="h-6 w-px bg-border" />
+                          <div className="flex items-center gap-2">
+                            <Icon name="calendar" className="w-4 h-4 text-primary" />
+                            <span className="text-sm font-medium text-foreground">
+                              {selectedPeriod ? `Period ${selectedPeriod}` : 'No period'}
+                            </span>
+                          </div>
+                          <div className="h-6 w-px bg-border" />
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-muted-foreground">Priority:</span>
+                            <span className="text-sm font-bold text-foreground capitalize">{selectedPriority}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground italic text-sm">
+                          <Icon name="cursor-arrow-rays" className="w-4 h-4" />
+                          <span>Make selections above to see route summary</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -676,24 +843,24 @@ const AdvancedOptimizationInteractive = () => {
 
                 {/* Decision Variables */}
                 {routeData.decision_variables && (
-                  <div className="bg-card rounded-xl shadow-lg p-8 border border-border">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-primary/10 rounded-lg">
-                        <Icon name="variable" className="w-6 h-6 text-primary" />
+                  <div className="bg-card rounded-xl shadow-lg p-10 border border-border">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="p-4 bg-primary/10 rounded-lg">
+                        <Icon name="variable" className="w-8 h-8 text-primary" />
                       </div>
-                      <h2 className="text-2xl font-heading font-bold text-foreground">
-                        MILP Decision Variables
+                      <h2 className="text-3xl font-heading font-bold text-foreground">
+                        Decision Variables (MILP Solution)
                       </h2>
                     </div>
-                    <div className="grid grid-cols-5 gap-4">
+                    <div className="grid grid-cols-5 gap-6">
                       {Object.entries(routeData.decision_variables).map(([key, variable]: [string, any]) => (
-                        <div key={key} className="p-5 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
-                          <p className="font-mono text-accent font-bold text-lg mb-2">{variable.name}</p>
-                          <p className="text-3xl font-bold text-foreground mb-1">
+                        <div key={key} className="p-6 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
+                          <p className="font-mono text-accent font-bold text-xl mb-3">{variable.name}</p>
+                          <p className="text-4xl font-bold text-foreground mb-2">
                             {variable.value?.toLocaleString() || 0}
                           </p>
-                          <p className="text-xs text-primary font-medium mb-3">{variable.unit}</p>
-                          <p className="text-xs text-muted-foreground">{variable.description}</p>
+                          <p className="text-sm text-primary font-medium mb-3">{variable.unit}</p>
+                          <p className="text-sm text-muted-foreground">{variable.description}</p>
                           {variable.formula && (
                             <p className="text-xs text-accent mt-2 font-mono">{variable.formula}</p>
                           )}
@@ -705,46 +872,60 @@ const AdvancedOptimizationInteractive = () => {
 
                 {/* Objective Function */}
                 {routeData.objective_function && (
-                  <div className="bg-gradient-to-br from-success/10 to-emerald/5 rounded-xl shadow-lg p-8 border-2 border-success/30">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-success/20 rounded-lg">
-                        <Icon name="target" className="w-6 h-6 text-success" />
+                  <div className="bg-gradient-to-br from-success/10 to-emerald/5 rounded-xl shadow-lg p-10 border-2 border-success/30">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="p-4 bg-success/20 rounded-lg">
+                        <Icon name="target" className="w-8 h-8 text-success" />
                       </div>
-                      <h2 className="text-2xl font-heading font-bold text-foreground">
-                        Objective Function: {routeData.objective_function.type}
+                      <h2 className="text-3xl font-heading font-bold text-foreground">
+                        Objective Function: Minimize
                       </h2>
                     </div>
-                    <div className="p-6 bg-card rounded-xl mb-6 border border-success/20">
-                      <p className="font-mono text-success font-bold text-lg">
+                    <div className="p-8 bg-card rounded-xl mb-8 border border-success/20">
+                      <p className="font-mono text-success font-bold text-xl">
                         {routeData.objective_function.formula}
                       </p>
                     </div>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-3 gap-6">
                       {routeData.objective_function.components?.map((comp: any, idx: number) => (
-                        <div key={idx} className="p-4 bg-card rounded-lg border border-border">
-                          <p className="text-sm font-semibold text-foreground mb-2">{comp.name}</p>
-                          <p className="text-2xl font-bold text-success">
+                        <div key={idx} className="p-6 bg-card rounded-lg border border-border">
+                          <p className="text-base font-semibold text-foreground mb-3 uppercase tracking-wide">{comp.name}</p>
+                          <p className="text-3xl font-bold text-success mb-2">
                             ₹{comp.value?.toLocaleString() || 0}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{comp.formula}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{comp.formula}</p>
                         </div>
                       ))}
+                    </div>
+                    
+                    {/* Total Cost */}
+                    <div className="mt-8 p-6 bg-gradient-to-r from-success/20 to-emerald/10 rounded-xl border-2 border-success/40">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-lg font-semibold text-success mb-1">Total Cost (Z*)</p>
+                          <p className="text-sm text-muted-foreground">Minimized objective function value</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-5xl font-bold text-success">₹{routeData.objective_function.total_cost?.toLocaleString() || 0}</p>
+                          <p className="text-base text-success mt-2">Cost per ton delivered: ₹{routeData.objective_function.cost_per_ton?.toLocaleString() || 0}/ton</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {/* Constraints Analysis */}
                 {routeData.constraints && (
-                  <div className="bg-card rounded-xl shadow-lg p-8 border border-border">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-error/10 rounded-lg">
-                        <Icon name="shield-exclamation" className="w-6 h-6 text-error" />
+                  <div className="bg-card rounded-xl shadow-lg p-10 border border-border">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="p-4 bg-error/10 rounded-lg">
+                        <Icon name="shield-exclamation" className="w-8 h-8 text-error" />
                       </div>
-                      <h2 className="text-2xl font-heading font-bold text-foreground">
+                      <h2 className="text-3xl font-heading font-bold text-foreground">
                         Constraints Analysis
                       </h2>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-6">
                       {Object.entries(routeData.constraints).map(([key, constraint]: [string, any]) => (
                         constraint && typeof constraint === 'object' && constraint.name && (
                           <div
@@ -768,96 +949,284 @@ const AdvancedOptimizationInteractive = () => {
                               {constraint.formula}
                             </p>
                             <div className="text-sm space-y-1 text-foreground/80">
-                              <p>LHS: {constraint.lhs} | RHS: {constraint.rhs}</p>
+                              {constraint.lhs !== undefined && constraint.rhs !== undefined && (
+                                <p>LHS: {constraint.lhs} | RHS: {constraint.rhs}</p>
+                              )}
                               {constraint.slack && (
-                                <p className="text-success">Slack: {constraint.slack}</p>
+                                <p className="text-success">Slack: {constraint.slack.toLocaleString()} tons</p>
                               )}
                               {constraint.utilization_pct && (
                                 <p>Utilization: {constraint.utilization_pct}%</p>
+                              )}
+                              {constraint.safety_stock !== undefined && (
+                                <>
+                                  <p>Safety Stock: {constraint.safety_stock.toLocaleString()}</p>
+                                  <p>Current: {constraint.current.toLocaleString()}</p>
+                                  <p>Max Capacity: {constraint.max_capacity === 'unlimited' ? 'unlimited' : constraint.max_capacity.toLocaleString()}</p>
+                                </>
+                              )}
+                              {constraint.vehicle_capacity && (
+                                <p className="text-primary">Vehicle Capacity: {constraint.vehicle_capacity}</p>
                               )}
                             </div>
                           </div>
                         )
                       ))}
                     </div>
+                    
+                    {/* Strategic Constraints */}
+                    {routeData.strategic_constraints && routeData.strategic_constraints.length > 0 && (
+                      <div className="mt-6 p-5 bg-warning/10 rounded-xl border border-warning/30">
+                        <h3 className="text-lg font-bold text-foreground mb-3">
+                          Strategic Constraints (from IUGUConstraint.csv)
+                        </h3>
+                        {routeData.strategic_constraints.map((sc: any, idx: number) => (
+                          <div key={idx} className="text-sm text-foreground mb-2">
+                            <span className="font-semibold">Bound:</span> {sc.bound} | 
+                            <span className="font-semibold"> Value Type:</span> {sc.value_type} | 
+                            <span className="font-semibold"> Value:</span> {sc.value.toLocaleString()} | 
+                            <span className="font-semibold"> Transport:</span> {sc.transport}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Mass Balance Equations */}
+                {routeData.mass_balance && (
+                  <div className="bg-card rounded-xl shadow-lg p-10 border border-border">
+                    <div className="flex items-center gap-3 mb-8">
+                      <Icon name="scale" className="w-8 h-8 text-primary" />
+                      <h2 className="text-3xl font-heading font-bold text-foreground">
+                        Mass Balance Equations
+                      </h2>
+                    </div>
+                    
+                    <div className="p-6 bg-primary/5 rounded-lg mb-8 border border-primary/20">
+                      <p className="font-mono text-primary font-semibold text-center text-lg">
+                        I[i,t] = I[i,t-1] + P[i,t] + Σ(inbound) - Σ(outbound) - D[i,t]
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* Source Mass Balance */}
+                      <div className="p-6 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 rounded-xl border border-orange-200 dark:border-orange-800">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Icon name="building-office" className="w-5 h-5 text-orange-600" />
+                          <h3 className="text-lg font-bold text-orange-900 dark:text-orange-100">
+                            Source: {routeData.source}
+                          </h3>
+                        </div>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Opening Inventory (I[t-1]):</span>
+                            <span className="font-bold text-foreground">{routeData.mass_balance.source.opening_inventory.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-success">
+                            <span>+ Production (P[t]):</span>
+                            <span className="font-bold">+{routeData.mass_balance.source.production.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-primary">
+                            <span>+ Inbound:</span>
+                            <span className="font-bold">+{routeData.mass_balance.source.inbound.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-error">
+                            <span>- Outbound:</span>
+                            <span className="font-bold">-{routeData.mass_balance.source.outbound.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-error">
+                            <span>- Demand (D[t]):</span>
+                            <span className="font-bold">-{routeData.mass_balance.source.demand.toLocaleString()}</span>
+                          </div>
+                          <div className="pt-3 border-t border-orange-300 dark:border-orange-700 flex justify-between">
+                            <span className="font-bold text-orange-900 dark:text-orange-100">= Ending Inventory (I[t]):</span>
+                            <span className="font-bold text-orange-600 text-lg">{routeData.mass_balance.source.ending_inventory.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                          <p className="text-xs font-mono text-muted-foreground">{routeData.mass_balance.source.equation}</p>
+                        </div>
+                      </div>
+
+                      {/* Destination Mass Balance */}
+                      <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 rounded-xl border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Icon name="map-pin" className="w-5 h-5 text-blue-600" />
+                          <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                            Destination: {routeData.destination}
+                          </h3>
+                        </div>
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Opening Inventory (I[t-1]):</span>
+                            <span className="font-bold text-foreground">{routeData.mass_balance.destination.opening_inventory.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-success">
+                            <span>+ Production (P[t]):</span>
+                            <span className="font-bold">+{routeData.mass_balance.destination.production.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-primary">
+                            <span>+ Inbound:</span>
+                            <span className="font-bold">+{routeData.mass_balance.destination.inbound.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-error">
+                            <span>- Outbound:</span>
+                            <span className="font-bold">-{routeData.mass_balance.destination.outbound.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-error">
+                            <span>- Demand (D[t]):</span>
+                            <span className="font-bold">-{routeData.mass_balance.destination.demand.toLocaleString()}</span>
+                          </div>
+                          <div className="pt-3 border-t border-blue-300 dark:border-blue-700 flex justify-between">
+                            <span className="font-bold text-blue-900 dark:text-blue-100">= Ending Inventory (I[t]):</span>
+                            <span className="font-bold text-blue-600 text-lg">{routeData.mass_balance.destination.ending_inventory.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                          <p className="text-xs font-mono text-muted-foreground">{routeData.mass_balance.destination.equation}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {/* Performance Metrics */}
                 {routeData.metrics && (
-                  <div className="bg-card rounded-xl shadow-lg p-8 border border-border">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-accent/10 rounded-lg">
-                        <Icon name="chart-bar" className="w-6 h-6 text-accent" />
+                  <div className="bg-card rounded-xl shadow-lg p-10 border border-border">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="p-4 bg-accent/10 rounded-lg">
+                        <Icon name="chart-bar" className="w-8 h-8 text-accent" />
                       </div>
-                      <h2 className="text-2xl font-heading font-bold text-foreground">
+                      <h2 className="text-3xl font-heading font-bold text-foreground">
                         Performance Metrics
                       </h2>
                     </div>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="p-5 bg-gradient-to-br from-accent/10 to-accent/5 rounded-xl">
-                        <p className="text-sm font-medium text-accent mb-1">Capacity Utilization</p>
-                        <p className="text-3xl font-bold text-accent">
+                    <div className="grid grid-cols-4 gap-6 mb-8">
+                      <div className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 rounded-xl border border-accent/20">
+                        <p className="text-base font-medium text-accent mb-2 uppercase tracking-wide">Capacity Utilization</p>
+                        <p className="text-4xl font-bold text-accent">
                           {routeData.metrics.capacity_utilization_pct?.toFixed(1)}%
                         </p>
                       </div>
-                      <div className="p-5 bg-gradient-to-br from-success/10 to-emerald/5 rounded-xl">
-                        <p className="text-sm font-medium text-success mb-1">Demand Fulfillment</p>
+                      <div className="p-5 bg-gradient-to-br from-success/10 to-emerald/5 rounded-xl border border-success/20">
+                        <p className="text-sm font-medium text-success mb-1 uppercase tracking-wide">Demand Fulfillment</p>
                         <p className="text-3xl font-bold text-success">
                           {routeData.metrics.demand_fulfillment_pct?.toFixed(1)}%
                         </p>
                       </div>
-                      <div className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl">
-                        <p className="text-sm font-medium text-primary mb-1">Transport Efficiency</p>
+                      <div className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl border border-primary/20">
+                        <p className="text-sm font-medium text-primary mb-1 uppercase tracking-wide">Transport Efficiency</p>
                         <p className="text-3xl font-bold text-primary">
                           {routeData.metrics.transport_efficiency?.toFixed(1)}%
                         </p>
                       </div>
-                      <div className="p-5 bg-gradient-to-br from-warning/10 to-amber/5 rounded-xl">
-                        <p className="text-sm font-medium text-warning mb-1">Inventory Turnover</p>
-                        <p className="text-3xl font-bold text-warning">
+                      <div className="p-5 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-xl border border-purple-500/20">
+                        <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1 uppercase tracking-wide">Days of Supply (Dest)</p>
+                        <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                          {routeData.metrics.days_of_supply_dest?.toFixed(1)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="p-5 bg-muted/30 rounded-xl border border-border">
+                        <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wide">Inventory Turnover (Source)</p>
+                        <p className="text-3xl font-bold text-foreground">
                           {routeData.metrics.inventory_turnover_source?.toFixed(2)}x
+                        </p>
+                      </div>
+                      <div className="p-5 bg-muted/30 rounded-xl border border-border">
+                        <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wide">Inventory Turnover (Dest)</p>
+                        <p className="text-3xl font-bold text-foreground">
+                          {routeData.metrics.inventory_turnover_dest?.toFixed(2)}x
                         </p>
                       </div>
                     </div>
 
                     {/* Cost Breakdown */}
                     {routeData.metrics.cost_breakdown_pct && (
-                      <div className="mt-6 p-5 bg-muted/30 rounded-xl">
-                        <p className="text-sm font-semibold text-foreground mb-3">Cost Breakdown</p>
-                        <div className="flex gap-2 h-6 rounded-lg overflow-hidden">
+                      <div className="p-5 bg-muted/20 rounded-xl border border-border">
+                        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Cost Breakdown (%)</p>
+                        <div className="flex gap-2 h-8 rounded-lg overflow-hidden mb-4">
                           <div
-                            className="bg-primary flex items-center justify-center text-xs font-bold text-white"
+                            className="bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center text-xs font-bold text-white transition-all"
                             style={{ width: `${routeData.metrics.cost_breakdown_pct.production}%` }}
                           >
-                            {routeData.metrics.cost_breakdown_pct.production.toFixed(0)}%
+                            {routeData.metrics.cost_breakdown_pct.production >= 10 && `Prod ${routeData.metrics.cost_breakdown_pct.production.toFixed(0)}%`}
                           </div>
                           <div
-                            className="bg-accent flex items-center justify-center text-xs font-bold text-white"
+                            className="bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white transition-all"
                             style={{ width: `${routeData.metrics.cost_breakdown_pct.transport}%` }}
                           >
-                            {routeData.metrics.cost_breakdown_pct.transport.toFixed(0)}%
+                            {routeData.metrics.cost_breakdown_pct.transport >= 10 && `Transport ${routeData.metrics.cost_breakdown_pct.transport.toFixed(0)}%`}
                           </div>
                           <div
-                            className="bg-warning flex items-center justify-center text-xs font-bold text-white"
+                            className="bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white transition-all"
                             style={{ width: `${routeData.metrics.cost_breakdown_pct.holding}%` }}
                           >
-                            {routeData.metrics.cost_breakdown_pct.holding.toFixed(0)}%
+                            {routeData.metrics.cost_breakdown_pct.holding >= 5 && `Holding ${routeData.metrics.cost_breakdown_pct.holding.toFixed(0)}%`}
                           </div>
                         </div>
-                        <div className="flex gap-4 mt-3 text-xs">
-                          <span className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-primary rounded"></div> Production
+                        <div className="flex gap-6 text-xs">
+                          <span className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded"></div> Production
                           </span>
-                          <span className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-accent rounded"></div> Transport
+                          <span className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded"></div> Transport
                           </span>
-                          <span className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-warning rounded"></div> Holding
+                          <span className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded"></div> Holding
                           </span>
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Raw Data from Excel Files */}
+                {routeData.raw_data && (
+                  <div className="bg-card rounded-xl shadow-lg p-10 border border-border">
+                    <div className="flex items-center gap-3 mb-8">
+                      <Icon name="database" className="w-8 h-8 text-primary" />
+                      <h2 className="text-3xl font-heading font-bold text-foreground">
+                        Raw Data from Excel Files
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-4 gap-6">
+                      <div className="p-6 bg-muted/20 rounded-lg border border-border">
+                        <p className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Source Type</p>
+                        <p className="text-3xl font-bold text-foreground">{routeData.raw_data.source_type}</p>
+                      </div>
+                      <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Destination Type</p>
+                        <p className="text-2xl font-bold text-foreground">{routeData.raw_data.destination_type}</p>
+                      </div>
+                      <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Freight Cost</p>
+                        <p className="text-2xl font-bold text-foreground">{routeData.raw_data.freight_cost_per_ton}</p>
+                      </div>
+                      <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Handling Cost</p>
+                        <p className="text-2xl font-bold text-foreground">{routeData.raw_data.handling_cost_per_ton}</p>
+                      </div>
+                      <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Production Cost</p>
+                        <p className="text-2xl font-bold text-foreground">{routeData.raw_data.production_cost_per_ton}</p>
+                      </div>
+                      <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Source Capacity</p>
+                        <p className="text-2xl font-bold text-foreground">{routeData.raw_data.source_capacity_tons}</p>
+                      </div>
+                      <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Destination Demand</p>
+                        <p className="text-2xl font-bold text-foreground">{routeData.raw_data.destination_demand_tons}</p>
+                      </div>
+                      <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                        <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">Total Logistics</p>
+                        <p className="text-2xl font-bold text-foreground">{routeData.raw_data.total_logistics_per_ton}</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

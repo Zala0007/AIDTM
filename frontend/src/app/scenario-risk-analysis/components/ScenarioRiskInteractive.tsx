@@ -90,7 +90,7 @@ const ScenarioRiskInteractive = () => {
     if (!initialData) return null;
 
     const demandValues: number[] = [];
-    const periodDemand: number[] = Array.from({ length: initialData.T }).fill(0);
+    const periodDemand: number[] = Array.from({ length: initialData.T }, () => 0);
 
     Object.values(initialData.demand).forEach((series) => {
       series.forEach((val, idx) => {

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from typing import Optional
+import tempfile
+import os
+from pathlib import Path
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+import pandas as pd
 
 from .optimizer import solve_clinker_transport
 from .schemas import OptimizationRequest, OptimizationResponse
@@ -218,70 +222,166 @@ def sustainability_data(period: str = "monthly") -> dict:
     return {"period": period, "data": scaled_data}
 
 
-# ===== Advanced Optimization Endpoints (Mock) =====
+# ===== Advanced Optimization Endpoints (Real CSV Data) =====
+from .csv_data_loader import (
+    get_data_summary,
+    get_sources as get_csv_sources,
+    get_destinations as get_csv_destinations,
+    get_transport_modes,
+    get_periods as get_csv_periods,
+    get_route_data as get_csv_route_data
+)
+from .milp_optimizer import calculate_milp_solution
+from .excel_data_loader import (
+    get_data_from_store,
+    get_sources_from_store,
+    get_destinations_from_store,
+    get_transport_modes_from_store,
+    get_periods_from_store,
+    calculate_milp_from_store
+)
+
+# Global storage for uploaded data
+uploaded_data_store = {}
+
 @app.post("/api/upload")
-async def upload_excel():
-    """Mock endpoint for Excel upload - returns success with dummy data."""
-    return {
-        "success": True,
-        "message": "File uploaded successfully (MOCK)",
-        "sheets_found": ["IUGUType", "LogisticsIUGU", "ClinkerCapacity", "ClinkerDemand", "ProductionCost", "IUGUOpeningStock", "IUGUClosingStock"],
-        "total_routes": 150,
-        "total_plants": 25,
-        "total_periods": 12,
-        "periods": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
-        "warnings": ["⚠️ Mock endpoint - backend implementation required"]
-    }
+async def upload_excel(file: UploadFile = File(...)):
+    """Process uploaded Excel file and extract all required sheets."""
+    tmp_path = None
+    try:
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_path = tmp_file.name
+        
+        # Read Excel file and extract all sheets - use context manager to ensure proper closing
+        with pd.ExcelFile(tmp_path) as excel_file:
+            sheets_found = excel_file.sheet_names
+            
+            # Required sheets
+            required_sheets = {
+                "IUGUType": None,
+                "LogisticsIUGU": None,
+                "ClinkerCapacity": None,
+                "ClinkerDemand": None,
+                "ProductionCost": None,
+                "IUGUOpeningStock": None,
+                "IUGUClosingStock": None
+            }
+            
+            # Load each sheet
+            for sheet_name in required_sheets.keys():
+                if sheet_name in sheets_found:
+                    required_sheets[sheet_name] = pd.read_excel(excel_file, sheet_name=sheet_name)
+        
+        # Store in global variable for other endpoints to use
+        global uploaded_data_store
+        uploaded_data_store = required_sheets
+        
+        # Extract metadata
+        logistics_df = required_sheets.get("LogisticsIUGU")
+        if logistics_df is not None:
+            # Filter out Sea routes (T3)
+            logistics_df = logistics_df[logistics_df['TRANSPORT CODE'] != 'T3']
+            total_routes = len(logistics_df)
+            periods = sorted(logistics_df['TIME PERIOD'].unique().astype(str).tolist())
+            total_periods = len(periods)
+        else:
+            total_routes = 0
+            periods = []
+            total_periods = 0
+        
+        # Count unique plants
+        iugu_type_df = required_sheets.get("IUGUType")
+        total_plants = len(iugu_type_df) if iugu_type_df is not None else 0
+        
+        # Clean up temp file - now safe to delete after ExcelFile context manager closed
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except Exception as cleanup_error:
+                # Log but don't fail if cleanup fails
+                print(f"Warning: Could not delete temp file {tmp_path}: {cleanup_error}")
+        
+        return {
+            "success": True,
+            "message": f"Successfully loaded {len([s for s in required_sheets.values() if s is not None])} sheets from {file.filename}",
+            "sheets_found": [s for s in required_sheets.keys() if required_sheets[s] is not None],
+            "total_routes": total_routes,
+            "total_plants": total_plants,
+            "total_periods": total_periods,
+            "periods": periods,
+            "warnings": []
+        }
+        
+    except Exception as e:
+        # Cleanup temp file in case of error
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except:
+                pass
+        
+        return {
+            "success": False,
+            "message": f"Failed to process file: {str(e)}",
+            "errors": [str(e)]
+        }
 
 
 @app.post("/api/load-default")
 async def load_default():
-    """Mock endpoint to load default data."""
-    return {
-        "success": True,
-        "message": "Default data loaded (MOCK)",
-        "sheets_found": ["IUGUType", "LogisticsIUGU", "ClinkerCapacity", "ClinkerDemand", "ProductionCost", "IUGUOpeningStock", "IUGUClosingStock"],
-        "total_routes": 150,
-        "total_plants": 25,
-        "total_periods": 12,
-        "periods": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
-    }
+    """Load default CSV data from real_data folder."""
+    return get_data_summary()
 
 
 @app.get("/api/sources")
 async def get_sources():
-    """Mock endpoint - returns sample source plants."""
-    return {
-        "sources": ["IU001", "IU002", "IU003", "IU004", "IU005"]
-    }
+    """Get source plants (IU codes only, excluding Sea routes). Uses uploaded data if available, otherwise CSV."""
+    global uploaded_data_store
+    if uploaded_data_store:
+        sources = get_sources_from_store(uploaded_data_store)
+        return {"sources": sources, "source": "uploaded"}
+    else:
+        sources = get_csv_sources()
+        return {"sources": sources, "source": "csv"}
 
 
 @app.get("/api/destinations/{source}")
 async def get_destinations(source: str):
-    """Mock endpoint - returns sample destinations."""
-    return {
-        "destinations": ["IUGU001", "IUGU002", "IUGU003", "IUGU004"]
-    }
+    """Get destinations for a source (excluding Sea routes). Uses uploaded data if available, otherwise CSV."""
+    global uploaded_data_store
+    if uploaded_data_store:
+        destinations = get_destinations_from_store(uploaded_data_store, source)
+        return {"destinations": destinations, "source": "uploaded"}
+    else:
+        destinations = get_csv_destinations(source)
+        return {"destinations": destinations, "source": "csv"}
 
 
 @app.get("/api/modes/{source}/{destination}")
 async def get_modes(source: str, destination: str):
-    """Mock endpoint - returns transport modes."""
-    return {
-        "modes": [
-            {"code": "T1", "name": "Road", "vehicle_capacity": 25},
-            {"code": "T2", "name": "Rail", "vehicle_capacity": 100},
-            {"code": "T3", "name": "Sea", "vehicle_capacity": 500}
-        ]
-    }
+    """Get transport modes for a route (Road and Rail only, no Sea). Uses uploaded data if available, otherwise CSV."""
+    global uploaded_data_store
+    if uploaded_data_store:
+        modes = get_transport_modes_from_store(uploaded_data_store, source, destination)
+        return {"modes": modes, "source": "uploaded"}
+    else:
+        modes = get_transport_modes(source, destination)
+        return {"modes": modes, "source": "csv"}
 
 
 @app.get("/api/periods")
 async def get_periods():
-    """Mock endpoint - returns time periods."""
-    return {
-        "periods": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
-    }
+    """Get time periods. Uses uploaded data if available, otherwise CSV."""
+    global uploaded_data_store
+    if uploaded_data_store:
+        periods = get_periods_from_store(uploaded_data_store)
+        return {"periods": periods, "source": "uploaded"}
+    else:
+        periods = get_csv_periods()
+        return {"periods": periods, "source": "csv"}
 
 
 @app.get("/api/model")
@@ -337,9 +437,24 @@ async def get_mathematical_model():
 
 
 @app.get("/api/route")
-async def get_route_analysis():
-    """Mock endpoint - returns MILP analysis results."""
-    return {
-        "success": False,
-        "error": "⚠️ Mock endpoint - Full MILP solver implementation required. Please implement ClinkerOptimizer class from GitHub repo."
-    }
+async def get_route_analysis(
+    source: str = Query(..., description="Source plant code"),
+    destination: str = Query(..., description="Destination plant code"),
+    mode: str = Query(..., description="Transport mode code"),
+    period: str = Query(..., description="Time period")
+):
+    """Get complete MILP optimization solution. Uses uploaded data if available, otherwise CSV data (excludes Sea routes)."""
+    global uploaded_data_store
+    try:
+        if uploaded_data_store:
+            milp_result = calculate_milp_from_store(uploaded_data_store, source, destination, mode, period)
+            milp_result["data_source"] = "uploaded"
+        else:
+            milp_result = calculate_milp_solution(source, destination, mode, int(period))
+            milp_result["data_source"] = "csv"
+        return milp_result
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }

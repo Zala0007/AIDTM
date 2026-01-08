@@ -11,6 +11,7 @@ export interface UploadResponse {
   sheets_found?: string[];
   total_routes?: number;
   total_plants?: number;
+  total_periods?: number;
   periods?: string[];
   warnings?: string[];
   errors?: string[];

@@ -121,7 +121,7 @@ const InventoryChart = ({
                   fontFamily: 'var(--font-body)',
                   boxShadow: 'var(--shadow-lg)',
                 }}
-                formatter={(value: number) => [`${value.toLocaleString()} ${unit}`, '']}
+                formatter={(value: number | undefined) => value !== undefined ? [`${value.toLocaleString()} ${unit}`, ''] : ['N/A', '']}
               />
               <Legend
                 wrapperStyle={{
