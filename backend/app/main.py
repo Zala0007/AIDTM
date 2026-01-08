@@ -216,3 +216,130 @@ def sustainability_data(period: str = "monthly") -> dict:
         scaled_data.append(scaled_item)
 
     return {"period": period, "data": scaled_data}
+
+
+# ===== Advanced Optimization Endpoints (Mock) =====
+@app.post("/api/upload")
+async def upload_excel():
+    """Mock endpoint for Excel upload - returns success with dummy data."""
+    return {
+        "success": True,
+        "message": "File uploaded successfully (MOCK)",
+        "sheets_found": ["IUGUType", "LogisticsIUGU", "ClinkerCapacity", "ClinkerDemand", "ProductionCost", "IUGUOpeningStock", "IUGUClosingStock"],
+        "total_routes": 150,
+        "total_plants": 25,
+        "total_periods": 12,
+        "periods": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+        "warnings": ["⚠️ Mock endpoint - backend implementation required"]
+    }
+
+
+@app.post("/api/load-default")
+async def load_default():
+    """Mock endpoint to load default data."""
+    return {
+        "success": True,
+        "message": "Default data loaded (MOCK)",
+        "sheets_found": ["IUGUType", "LogisticsIUGU", "ClinkerCapacity", "ClinkerDemand", "ProductionCost", "IUGUOpeningStock", "IUGUClosingStock"],
+        "total_routes": 150,
+        "total_plants": 25,
+        "total_periods": 12,
+        "periods": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+    }
+
+
+@app.get("/api/sources")
+async def get_sources():
+    """Mock endpoint - returns sample source plants."""
+    return {
+        "sources": ["IU001", "IU002", "IU003", "IU004", "IU005"]
+    }
+
+
+@app.get("/api/destinations/{source}")
+async def get_destinations(source: str):
+    """Mock endpoint - returns sample destinations."""
+    return {
+        "destinations": ["IUGU001", "IUGU002", "IUGU003", "IUGU004"]
+    }
+
+
+@app.get("/api/modes/{source}/{destination}")
+async def get_modes(source: str, destination: str):
+    """Mock endpoint - returns transport modes."""
+    return {
+        "modes": [
+            {"code": "T1", "name": "Road", "vehicle_capacity": 25},
+            {"code": "T2", "name": "Rail", "vehicle_capacity": 100},
+            {"code": "T3", "name": "Sea", "vehicle_capacity": 500}
+        ]
+    }
+
+
+@app.get("/api/periods")
+async def get_periods():
+    """Mock endpoint - returns time periods."""
+    return {
+        "periods": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+    }
+
+
+@app.get("/api/model")
+async def get_mathematical_model():
+    """Return the mathematical model formulation."""
+    return {
+        "success": True,
+        "model": {
+            "name": "Multi-Period Clinker Supply Chain MILP",
+            "type": "Mixed Integer Linear Programming (MILP)",
+            "objective": {
+                "type": "Minimize",
+                "description": "Total supply chain cost across all periods",
+                "formula": "Z = Σ(Production Cost) + Σ(Transport Cost) + Σ(Holding Cost)",
+                "components": [
+                    {"name": "Production Cost", "formula": "Σ(P[i,t] × PC[i])", "unit": "₹/ton"},
+                    {"name": "Transport Cost", "formula": "Σ(X[i,j,m,t] × TC[i,j,m])", "unit": "₹/ton"},
+                    {"name": "Holding Cost", "formula": "Σ(I[i,t] × HC[i])", "unit": "₹/ton"}
+                ]
+            },
+            "decision_variables": [
+                {"symbol": "P[i,t]", "description": "Production at plant i in period t", "unit": "tons", "domain": "Continuous ≥ 0"},
+                {"symbol": "X[i,j,m,t]", "description": "Shipment from i to j via mode m in period t", "unit": "tons", "domain": "Continuous ≥ 0"},
+                {"symbol": "I[i,t]", "description": "Inventory at plant i at end of period t", "unit": "tons", "domain": "Continuous ≥ 0"},
+                {"symbol": "T[i,j,m,t]", "description": "Number of trips from i to j via mode m in period t", "unit": "trips", "domain": "Integer ≥ 0"}
+            ],
+            "constraints": [
+                {"name": "Mass Balance", "formula": "I[i,t-1] + P[i,t] + Σ(inbound) = Σ(outbound) + D[i,t] + I[i,t]", "description": "Conservation of flow at each node", "scope": "∀i, ∀t"},
+                {"name": "Production Capacity", "formula": "P[i,t] ≤ CAP[i]", "description": "Production cannot exceed plant capacity", "scope": "∀i, ∀t"},
+                {"name": "Transport Capacity", "formula": "X[i,j,m,t] ≤ T[i,j,m,t] × VC[m]", "description": "Shipment must fit in allocated trips", "scope": "∀i,j,m,t"},
+                {"name": "Inventory Bounds", "formula": "I_min[i] ≤ I[i,t] ≤ I_max[i]", "description": "Inventory must stay within safety limits", "scope": "∀i, ∀t"},
+                {"name": "Initial Inventory", "formula": "I[i,0] = I_0[i]", "description": "Starting inventory must equal opening stock", "scope": "∀i"},
+                {"name": "Final Inventory", "formula": "I[i,T] = I_f[i]", "description": "Ending inventory must match closing stock requirement", "scope": "∀i"}
+            ],
+            "indices": [
+                {"symbol": "i", "description": "Source plant (IU)", "set": "I = {all IU plants}"},
+                {"symbol": "j", "description": "Destination plant (IUGU)", "set": "J = {all IUGU plants}"},
+                {"symbol": "m", "description": "Transport mode", "set": "M = {Road, Rail, Sea}"},
+                {"symbol": "t", "description": "Time period", "set": "T = {1,2,...,12}"}
+            ],
+            "parameters": [
+                {"symbol": "PC[i]", "description": "Production cost at plant i", "source": "ProductionCost sheet"},
+                {"symbol": "TC[i,j,m]", "description": "Transport cost from i to j via mode m", "source": "LogisticsIUGU sheet"},
+                {"symbol": "HC[i]", "description": "Holding cost per ton at plant i", "source": "IUGUOpeningStock sheet"},
+                {"symbol": "CAP[i]", "description": "Production capacity at plant i", "source": "ClinkerCapacity sheet"},
+                {"symbol": "D[j,t]", "description": "Demand at plant j in period t", "source": "ClinkerDemand sheet"},
+                {"symbol": "VC[m]", "description": "Vehicle capacity for mode m", "source": "IUGUType sheet"},
+                {"symbol": "I_0[i]", "description": "Opening inventory at plant i", "source": "IUGUOpeningStock sheet"},
+                {"symbol": "I_f[i]", "description": "Required closing inventory at plant i", "source": "IUGUClosingStock sheet"}
+            ]
+        }
+    }
+
+
+@app.get("/api/route")
+async def get_route_analysis():
+    """Mock endpoint - returns MILP analysis results."""
+    return {
+        "success": False,
+        "error": "⚠️ Mock endpoint - Full MILP solver implementation required. Please implement ClinkerOptimizer class from GitHub repo."
+    }
