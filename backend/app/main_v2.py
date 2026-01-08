@@ -168,6 +168,14 @@ if HAS_ADVANCED_FEATURES:
     app.include_router(advanced_router)
     logger.info("Advanced optimization features enabled")
 
+# Include Excel API endpoints
+try:
+    from .excel_api import router as excel_router
+    app.include_router(excel_router)
+    logger.info("Excel API endpoints enabled")
+except ImportError as e:
+    logger.warning(f"Excel API endpoints not available: {e}")
+
 
 # Middleware for logging requests
 @app.middleware("http")

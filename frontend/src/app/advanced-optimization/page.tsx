@@ -15,7 +15,7 @@ export default function AdvancedOptimizationPage() {
         <div className="max-w-7xl mx-auto">
           <AdvancedOptimizationInteractive />
         </div>
-      </main>
+      </main>   
     </div>
   );
 }

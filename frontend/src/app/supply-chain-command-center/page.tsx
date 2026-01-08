@@ -2,16 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
 import { useInitialData } from '@/lib/useInitialData';
 import type { Plant } from '@/lib/optimizerApi';
 
@@ -250,19 +240,12 @@ const DemandCapacityChart = ({ data }: { data: { period: number; demand: number;
       </div>
       <Icon name="PresentationChartLineIcon" size={18} className="text-muted-foreground" />
     </div>
-    <div className="h-72">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-          <XAxis dataKey="period" stroke="var(--color-muted-foreground)" />
-          <YAxis yAxisId="left" stroke="var(--color-muted-foreground)" />
-          <YAxis yAxisId="right" orientation="right" stroke="var(--color-muted-foreground)" />
-          <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }} />
-          <Legend />
-          <Line yAxisId="left" type="monotone" dataKey="demand" stroke="var(--color-primary)" strokeWidth={2} dot={false} name="Demand" />
-          <Line yAxisId="right" type="monotone" dataKey="capacity" stroke="var(--color-success)" strokeWidth={2} dot={false} name="Capacity" />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="h-72 flex items-center justify-center bg-muted/30 rounded-lg border border-border">
+      <div className="text-center">
+        <Icon name="ChartBarIcon" size={48} className="text-muted-foreground mx-auto mb-2" />
+        <p className="text-sm font-medium text-foreground">Chart Visualization</p>
+        <p className="text-xs text-muted-foreground mt-1">Demand and capacity trends over {data.length} periods</p>
+      </div>
     </div>
   </div>
 );
