@@ -341,6 +341,18 @@ const AdvancedOptimizationInteractive = () => {
     return `${value}${suffix}`;
   };
 
+  const safeNumber = (value: any, defaultValue: number = 0): number => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return defaultValue;
+    }
+    return typeof value === 'number' ? value : Number(value) || defaultValue;
+  };
+
+  const safeLocaleString = (value: any, defaultValue: string = '0'): string => {
+    const num = safeNumber(value);
+    return num.toLocaleString();
+  };
+
   const tabs = [
     { id: 'upload' as const, label: 'Data Upload & Analysis', icon: 'cloud-arrow-up' },
     { id: 'model' as const, label: 'Mathematical Model', icon: 'calculator' },
@@ -857,7 +869,7 @@ const AdvancedOptimizationInteractive = () => {
                         <div key={key} className="p-6 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
                           <p className="font-mono text-accent font-bold text-xl mb-3">{variable.name}</p>
                           <p className="text-4xl font-bold text-foreground mb-2">
-                            {variable.value?.toLocaleString() || 0}
+                            {safeLocaleString(variable.value)}
                           </p>
                           <p className="text-sm text-primary font-medium mb-3">{variable.unit}</p>
                           <p className="text-sm text-muted-foreground">{variable.description}</p>
@@ -887,15 +899,28 @@ const AdvancedOptimizationInteractive = () => {
                       </p>
                     </div>
                     <div className="grid grid-cols-3 gap-6">
-                      {routeData.objective_function.components?.map((comp: any, idx: number) => (
+                      {Array.isArray(routeData.objective_function.components) && routeData.objective_function.components.map((comp: any, idx: number) => (
                         <div key={idx} className="p-6 bg-card rounded-lg border border-border">
                           <p className="text-base font-semibold text-foreground mb-3 uppercase tracking-wide">{comp.name}</p>
                           <p className="text-3xl font-bold text-success mb-2">
-                            ₹{comp.value?.toLocaleString() || 0}
+                            ₹{safeLocaleString(comp.value)}
                           </p>
                           <p className="text-sm text-muted-foreground mt-2">{comp.formula}</p>
                         </div>
                       ))}
+                      {!Array.isArray(routeData.objective_function.components) && routeData.objective_function.components && (
+                        <>
+                          {Object.entries(routeData.objective_function.components).map(([key, comp]: [string, any], idx: number) => (
+                            <div key={idx} className="p-6 bg-card rounded-lg border border-border">
+                              <p className="text-base font-semibold text-foreground mb-3 uppercase tracking-wide">{comp.name || key}</p>
+                              <p className="text-3xl font-bold text-success mb-2">
+                                ₹{safeLocaleString(comp.value || comp)}
+                              </p>
+                              <p className="text-sm text-muted-foreground mt-2">{comp.formula || ''}</p>
+                            </div>
+                          ))}
+                        </>
+                      )}
                     </div>
                     
                     {/* Total Cost */}
@@ -906,8 +931,8 @@ const AdvancedOptimizationInteractive = () => {
                           <p className="text-sm text-muted-foreground">Minimized objective function value</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-5xl font-bold text-success">₹{routeData.objective_function.total_cost?.toLocaleString() || 0}</p>
-                          <p className="text-base text-success mt-2">Cost per ton delivered: ₹{routeData.objective_function.cost_per_ton?.toLocaleString() || 0}/ton</p>
+                          <p className="text-5xl font-bold text-success">₹{safeLocaleString(routeData.objective_function.total_cost)}</p>
+                          <p className="text-base text-success mt-2">Cost per ton delivered: ₹{safeLocaleString(routeData.objective_function.cost_per_ton)}/ton</p>
                         </div>
                       </div>
                     </div>
@@ -952,20 +977,24 @@ const AdvancedOptimizationInteractive = () => {
                               {constraint.lhs !== undefined && constraint.rhs !== undefined && (
                                 <p>LHS: {constraint.lhs} | RHS: {constraint.rhs}</p>
                               )}
-                              {constraint.slack && (
-                                <p className="text-success">Slack: {constraint.slack.toLocaleString()} tons</p>
+                              {constraint.slack !== undefined && constraint.slack !== null && (
+                                <p className="text-success">Slack: {safeLocaleString(constraint.slack)} tons</p>
                               )}
-                              {constraint.utilization_pct && (
-                                <p>Utilization: {constraint.utilization_pct}%</p>
+                              {constraint.utilization_pct !== undefined && constraint.utilization_pct !== null && (
+                                <p>Utilization: {safeNumber(constraint.utilization_pct)}%</p>
                               )}
-                              {constraint.safety_stock !== undefined && (
+                              {constraint.safety_stock !== undefined && constraint.safety_stock !== null && (
                                 <>
-                                  <p>Safety Stock: {constraint.safety_stock.toLocaleString()}</p>
-                                  <p>Current: {constraint.current.toLocaleString()}</p>
-                                  <p>Max Capacity: {constraint.max_capacity === 'unlimited' ? 'unlimited' : constraint.max_capacity.toLocaleString()}</p>
+                                  <p>Safety Stock: {safeLocaleString(constraint.safety_stock)}</p>
+                                  {constraint.current !== undefined && constraint.current !== null && (
+                                    <p>Current: {safeLocaleString(constraint.current)}</p>
+                                  )}
+                                  {constraint.max_capacity !== undefined && constraint.max_capacity !== null && (
+                                    <p>Max Capacity: {constraint.max_capacity === 'unlimited' ? 'unlimited' : safeLocaleString(constraint.max_capacity)}</p>
+                                  )}
                                 </>
                               )}
-                              {constraint.vehicle_capacity && (
+                              {constraint.vehicle_capacity !== undefined && constraint.vehicle_capacity !== null && (
                                 <p className="text-primary">Vehicle Capacity: {constraint.vehicle_capacity}</p>
                               )}
                             </div>
@@ -1021,31 +1050,31 @@ const AdvancedOptimizationInteractive = () => {
                         <div className="space-y-3 text-sm">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Opening Inventory (I[t-1]):</span>
-                            <span className="font-bold text-foreground">{routeData.mass_balance.source.opening_inventory.toLocaleString()}</span>
+                            <span className="font-bold text-foreground">{safeLocaleString(routeData.mass_balance?.source?.opening_inventory)}</span>
                           </div>
                           <div className="flex justify-between text-success">
                             <span>+ Production (P[t]):</span>
-                            <span className="font-bold">+{routeData.mass_balance.source.production.toLocaleString()}</span>
+                            <span className="font-bold">+{safeLocaleString(routeData.mass_balance?.source?.production)}</span>
                           </div>
                           <div className="flex justify-between text-primary">
                             <span>+ Inbound:</span>
-                            <span className="font-bold">+{routeData.mass_balance.source.inbound.toLocaleString()}</span>
+                            <span className="font-bold">+{safeLocaleString(routeData.mass_balance?.source?.inbound)}</span>
                           </div>
                           <div className="flex justify-between text-error">
                             <span>- Outbound:</span>
-                            <span className="font-bold">-{routeData.mass_balance.source.outbound.toLocaleString()}</span>
+                            <span className="font-bold">-{safeLocaleString(routeData.mass_balance?.source?.outbound)}</span>
                           </div>
                           <div className="flex justify-between text-error">
                             <span>- Demand (D[t]):</span>
-                            <span className="font-bold">-{routeData.mass_balance.source.demand.toLocaleString()}</span>
+                            <span className="font-bold">-{safeLocaleString(routeData.mass_balance?.source?.demand)}</span>
                           </div>
                           <div className="pt-3 border-t border-orange-300 dark:border-orange-700 flex justify-between">
                             <span className="font-bold text-orange-900 dark:text-orange-100">= Ending Inventory (I[t]):</span>
-                            <span className="font-bold text-orange-600 text-lg">{routeData.mass_balance.source.ending_inventory.toLocaleString()}</span>
+                            <span className="font-bold text-orange-600 text-lg">{safeLocaleString(routeData.mass_balance?.source?.ending_inventory)}</span>
                           </div>
                         </div>
                         <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                          <p className="text-xs font-mono text-muted-foreground">{routeData.mass_balance.source.equation}</p>
+                          <p className="text-xs font-mono text-muted-foreground">{routeData.mass_balance?.source?.equation || 'N/A'}</p>
                         </div>
                       </div>
 
@@ -1060,31 +1089,31 @@ const AdvancedOptimizationInteractive = () => {
                         <div className="space-y-3 text-sm">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Opening Inventory (I[t-1]):</span>
-                            <span className="font-bold text-foreground">{routeData.mass_balance.destination.opening_inventory.toLocaleString()}</span>
+                            <span className="font-bold text-foreground">{safeLocaleString(routeData.mass_balance?.destination?.opening_inventory)}</span>
                           </div>
                           <div className="flex justify-between text-success">
                             <span>+ Production (P[t]):</span>
-                            <span className="font-bold">+{routeData.mass_balance.destination.production.toLocaleString()}</span>
+                            <span className="font-bold">+{safeLocaleString(routeData.mass_balance?.destination?.production)}</span>
                           </div>
                           <div className="flex justify-between text-primary">
                             <span>+ Inbound:</span>
-                            <span className="font-bold">+{routeData.mass_balance.destination.inbound.toLocaleString()}</span>
+                            <span className="font-bold">+{safeLocaleString(routeData.mass_balance?.destination?.inbound)}</span>
                           </div>
                           <div className="flex justify-between text-error">
                             <span>- Outbound:</span>
-                            <span className="font-bold">-{routeData.mass_balance.destination.outbound.toLocaleString()}</span>
+                            <span className="font-bold">-{safeLocaleString(routeData.mass_balance?.destination?.outbound)}</span>
                           </div>
                           <div className="flex justify-between text-error">
                             <span>- Demand (D[t]):</span>
-                            <span className="font-bold">-{routeData.mass_balance.destination.demand.toLocaleString()}</span>
+                            <span className="font-bold">-{safeLocaleString(routeData.mass_balance?.destination?.demand)}</span>
                           </div>
                           <div className="pt-3 border-t border-blue-300 dark:border-blue-700 flex justify-between">
                             <span className="font-bold text-blue-900 dark:text-blue-100">= Ending Inventory (I[t]):</span>
-                            <span className="font-bold text-blue-600 text-lg">{routeData.mass_balance.destination.ending_inventory.toLocaleString()}</span>
+                            <span className="font-bold text-blue-600 text-lg">{safeLocaleString(routeData.mass_balance?.destination?.ending_inventory)}</span>
                           </div>
                         </div>
                         <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                          <p className="text-xs font-mono text-muted-foreground">{routeData.mass_balance.destination.equation}</p>
+                          <p className="text-xs font-mono text-muted-foreground">{routeData.mass_balance?.destination?.equation || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
@@ -1106,25 +1135,25 @@ const AdvancedOptimizationInteractive = () => {
                       <div className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 rounded-xl border border-accent/20">
                         <p className="text-base font-medium text-accent mb-2 uppercase tracking-wide">Capacity Utilization</p>
                         <p className="text-4xl font-bold text-accent">
-                          {routeData.metrics.capacity_utilization_pct?.toFixed(1)}%
+                          {safeNumber(routeData.metrics.capacity_utilization_pct).toFixed(1)}%
                         </p>
                       </div>
                       <div className="p-5 bg-gradient-to-br from-success/10 to-emerald/5 rounded-xl border border-success/20">
                         <p className="text-sm font-medium text-success mb-1 uppercase tracking-wide">Demand Fulfillment</p>
                         <p className="text-3xl font-bold text-success">
-                          {routeData.metrics.demand_fulfillment_pct?.toFixed(1)}%
+                          {safeNumber(routeData.metrics.demand_fulfillment_pct).toFixed(1)}%
                         </p>
                       </div>
                       <div className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl border border-primary/20">
                         <p className="text-sm font-medium text-primary mb-1 uppercase tracking-wide">Transport Efficiency</p>
                         <p className="text-3xl font-bold text-primary">
-                          {routeData.metrics.transport_efficiency?.toFixed(1)}%
+                          {safeNumber(routeData.metrics.transport_efficiency).toFixed(1)}%
                         </p>
                       </div>
                       <div className="p-5 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-xl border border-purple-500/20">
                         <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1 uppercase tracking-wide">Days of Supply (Dest)</p>
                         <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                          {routeData.metrics.days_of_supply_dest?.toFixed(1)}
+                          {safeNumber(routeData.metrics.days_of_supply_dest).toFixed(1)}
                         </p>
                       </div>
                     </div>
@@ -1133,13 +1162,13 @@ const AdvancedOptimizationInteractive = () => {
                       <div className="p-5 bg-muted/30 rounded-xl border border-border">
                         <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wide">Inventory Turnover (Source)</p>
                         <p className="text-3xl font-bold text-foreground">
-                          {routeData.metrics.inventory_turnover_source?.toFixed(2)}x
+                          {safeNumber(routeData.metrics.inventory_turnover_source).toFixed(2)}x
                         </p>
                       </div>
                       <div className="p-5 bg-muted/30 rounded-xl border border-border">
                         <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wide">Inventory Turnover (Dest)</p>
                         <p className="text-3xl font-bold text-foreground">
-                          {routeData.metrics.inventory_turnover_dest?.toFixed(2)}x
+                          {safeNumber(routeData.metrics.inventory_turnover_dest).toFixed(2)}x
                         </p>
                       </div>
                     </div>

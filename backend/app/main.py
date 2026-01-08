@@ -436,6 +436,20 @@ async def get_mathematical_model():
     }
 
 
+def clean_nan_values(obj):
+    """Recursively replace NaN, inf, and -inf values with None for JSON serialization."""
+    import math
+    if isinstance(obj, dict):
+        return {k: clean_nan_values(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_nan_values(item) for item in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    return obj
+
+
 @app.get("/api/route")
 async def get_route_analysis(
     source: str = Query(..., description="Source plant code"),
@@ -452,6 +466,9 @@ async def get_route_analysis(
         else:
             milp_result = calculate_milp_solution(source, destination, mode, int(period))
             milp_result["data_source"] = "csv"
+        
+        # Clean NaN values before returning
+        milp_result = clean_nan_values(milp_result)
         return milp_result
     except Exception as e:
         return {

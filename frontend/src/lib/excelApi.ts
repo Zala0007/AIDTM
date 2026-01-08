@@ -2,7 +2,7 @@
  * API client for Excel-based Advanced Optimization
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8003';
 
 // Type definitions
 export interface UploadResponse {
