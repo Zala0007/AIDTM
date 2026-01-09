@@ -226,8 +226,8 @@ const AdvancedOptimizationInteractive = () => {
     setLoading(true);
     const startTime = Date.now();
     
-    // Random loading duration between 25-35 seconds - unpredictable for user
-    const loadingDurations = [25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35];
+    // Random loading duration between 10-15 seconds - unpredictable for user
+    const loadingDurations = [10, 11, 12, 13, 14, 15];
     const randomDuration = loadingDurations[Math.floor(Math.random() * loadingDurations.length)] * 1000;
     
     // Initial log at 3ms
