@@ -155,14 +155,29 @@ def get_transport_modes(source: str, destination: str) -> List[Dict[str, Any]]:
             (logistics_df['TO IUGU CODE'] == destination)
         ]
         
+        # Mode mapping with proper names
+        mode_mapping = {
+            'T1': {'name': 'Road (T1)', 'vehicle_capacity': 25},
+            'T2': {'name': 'Rail (T2)', 'vehicle_capacity': 3000},
+            'Road': {'name': 'Road', 'vehicle_capacity': 25},
+            'Rail': {'name': 'Rail', 'vehicle_capacity': 3000},
+        }
+        
         modes = []
         for code in filtered['TRANSPORT CODE'].unique():
-            mode_name = "Road" if code == "T1" else "Rail" if code == "T2" else code
-            modes.append({
-                "code": code,
-                "name": mode_name,
-                "vehicle_capacity": 25 if code == "T1" else 100 if code == "T2" else 0
-            })
+            if code in mode_mapping:
+                modes.append({
+                    "code": code,
+                    "name": mode_mapping[code]['name'],
+                    "vehicle_capacity": mode_mapping[code]['vehicle_capacity']
+                })
+            else:
+                # Fallback for unknown codes
+                modes.append({
+                    "code": code,
+                    "name": f"Mode {code}",
+                    "vehicle_capacity": 0
+                })
         
         return sorted(modes, key=lambda x: x['code'])
     except Exception as e:

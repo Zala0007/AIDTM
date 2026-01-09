@@ -86,15 +86,22 @@ async def load_default_data():
     global _uploaded_data
     
     try:
-        # In a real implementation, load from CSV files in real_data folder
-        # For now, return success with placeholder data
+        from .csv_data_loader import get_data_summary
+        
+        # Get summary from CSV files
+        summary = get_data_summary()
+        
+        if not summary.get('success'):
+            return summary
+        
         return {
             'success': True,
-            'message': 'Default data loaded',
-            'sheets': ['IUGUType', 'ClinkerDemand', 'LogisticsIUGU'],
-            'total_routes': 0,
-            'total_plants': 0,
-            'periods': []
+            'message': 'Default CSV data loaded successfully',
+            'sheets_found': summary.get('sheets_found', []),
+            'total_routes': summary.get('total_routes', 0),
+            'total_plants': summary.get('total_plants', 0),
+            'total_periods': summary.get('total_periods', 0),
+            'periods': summary.get('periods', [])
         }
         
     except Exception as e:
@@ -110,12 +117,15 @@ async def get_sources():
     """Get list of source plants (IU codes)"""
     global _uploaded_data
     
-    if _uploaded_data is None:
-        raise HTTPException(status_code=400, detail="No data uploaded. Please upload Excel file first.")
-    
     try:
-        sources = _uploaded_data.get_sources()
-        return {'sources': sources}
+        # Try uploaded data first, fallback to CSV
+        if _uploaded_data is not None:
+            sources = _uploaded_data.get_sources()
+        else:
+            from .csv_data_loader import get_sources
+            sources = get_sources()
+        
+        return sources if isinstance(sources, list) else sources
     except Exception as e:
         logger.error(f"Get sources error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -126,12 +136,15 @@ async def get_destinations(source: str):
     """Get list of destination plants for a source"""
     global _uploaded_data
     
-    if _uploaded_data is None:
-        raise HTTPException(status_code=400, detail="No data uploaded")
-    
     try:
-        destinations = _uploaded_data.get_destinations(source)
-        return {'destinations': destinations}
+        # Try uploaded data first, fallback to CSV
+        if _uploaded_data is not None:
+            destinations = _uploaded_data.get_destinations(source)
+        else:
+            from .csv_data_loader import get_destinations
+            destinations = get_destinations(source)
+        
+        return destinations if isinstance(destinations, list) else destinations
     except Exception as e:
         logger.error(f"Get destinations error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -142,12 +155,15 @@ async def get_modes(source: str, destination: str):
     """Get transport modes for a route"""
     global _uploaded_data
     
-    if _uploaded_data is None:
-        raise HTTPException(status_code=400, detail="No data uploaded")
-    
     try:
-        modes = _uploaded_data.get_modes(source, destination)
-        return {'modes': modes}
+        # Try uploaded data first, fallback to CSV
+        if _uploaded_data is not None:
+            modes = _uploaded_data.get_modes(source, destination)
+        else:
+            from .csv_data_loader import get_transport_modes
+            modes = get_transport_modes(source, destination)
+        
+        return modes if isinstance(modes, list) else modes
     except Exception as e:
         logger.error(f"Get modes error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -158,12 +174,15 @@ async def get_periods():
     """Get available time periods"""
     global _uploaded_data
     
-    if _uploaded_data is None:
-        raise HTTPException(status_code=400, detail="No data uploaded")
-    
     try:
-        periods = _uploaded_data.get_periods()
-        return {'periods': periods}
+        # Try uploaded data first, fallback to CSV
+        if _uploaded_data is not None:
+            periods = _uploaded_data.get_periods()
+        else:
+            from .csv_data_loader import get_periods
+            periods = get_periods()
+        
+        return periods if isinstance(periods, list) else periods
     except Exception as e:
         logger.error(f"Get periods error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -179,11 +198,14 @@ async def get_route_data(
     """Get comprehensive route analytics data"""
     global _uploaded_data
     
-    if _uploaded_data is None:
-        raise HTTPException(status_code=400, detail="No data uploaded")
-    
     try:
-        route_data = _uploaded_data.get_route_data(source, destination, mode, period)
+        # Try uploaded data first, fallback to CSV
+        if _uploaded_data is not None:
+            route_data = _uploaded_data.get_route_data(source, destination, mode, period)
+        else:
+            from .milp_optimizer import calculate_milp_solution
+            route_data = calculate_milp_solution(source, destination, mode, int(period))
+        
         return route_data
     except Exception as e:
         logger.error(f"Get route data error: {str(e)}")

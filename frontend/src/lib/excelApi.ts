@@ -168,7 +168,8 @@ export async function getSources(): Promise<string[]> {
   }
 
   const data = await response.json();
-  return data.sources;
+  // Handle both array response and object with sources key
+  return Array.isArray(data) ? data : (data.sources || []);
 }
 
 /**
@@ -183,7 +184,8 @@ export async function getDestinations(source: string): Promise<string[]> {
   }
 
   const data = await response.json();
-  return data.destinations;
+  // Handle both array response and object with destinations key
+  return Array.isArray(data) ? data : (data.destinations || []);
 }
 
 /**
@@ -200,7 +202,8 @@ export async function getModes(source: string, destination: string): Promise<Tra
   }
 
   const data = await response.json();
-  return data.modes;
+  // Handle both array response and object with modes key
+  return Array.isArray(data) ? data : (data.modes || []);
 }
 
 /**
@@ -215,7 +218,8 @@ export async function getPeriods(): Promise<string[]> {
   }
 
   const data = await response.json();
-  return data.periods;
+  // Handle both array response and object with periods key
+  return Array.isArray(data) ? data : (data.periods || []);
 }
 
 /**

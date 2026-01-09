@@ -89,10 +89,17 @@ class ExcelDataParser:
             # Validate IUGUType
             if 'IUGUType' in self.data:
                 df = self.data['IUGUType']
-                required_cols = ['IU CODE', 'GU CODE']
-                missing = [c for c in required_cols if c not in df.columns]
-                if missing:
-                    self.errors.append(f"IUGUType missing columns: {', '.join(missing)}")
+                # Accept both old and new column names
+                required_cols_options = [
+                    ['IU CODE', 'GU CODE'],
+                    ['IUGU CODE', 'PLANT TYPE']
+                ]
+                has_valid_cols = any(
+                    all(c in df.columns for c in cols)
+                    for cols in required_cols_options
+                )
+                if not has_valid_cols:
+                    self.errors.append(f"IUGUType missing required columns. Expected 'IU CODE'+'GU CODE' or 'IUGU CODE'+'PLANT TYPE'")
             
             # Validate Opening Stock
             if 'IUGUOpeningStock' in self.data:
@@ -102,26 +109,18 @@ class ExcelDataParser:
                 if missing:
                     self.errors.append(f"IUGUOpeningStock missing columns: {', '.join(missing)}")
             
-            # Validate Logistics
+            # Validate Logistics - accept multiple column naming conventions
             if 'LogisticsIUGU' in self.data:
                 df = self.data['LogisticsIUGU']
-                required_cols = ['IU CODE', 'GU CODE', 'TRANSPORT CODE']
-                missing = [c for c in required_cols if c not in df.columns]
-                if missing:
-                    self.errors.append(f"LogisticsIUGU missing columns: {', '.join(missing)}")
-            
-            # Check for data consistency
-            if 'IUGUType' in self.data and 'LogisticsIUGU' in self.data:
-                iugu_codes = set(self.data['IUGUType'].apply(
-                    lambda row: f"{row['IU CODE']}_{row['GU CODE']}", axis=1
-                ).unique())
-                logistics_codes = set(self.data['LogisticsIUGU'].apply(
-                    lambda row: f"{row['IU CODE']}_{row['GU CODE']}", axis=1
-                ).unique())
+                # Try different column name combinations
+                has_from_to = 'FROM IU CODE' in df.columns and 'TO IUGU CODE' in df.columns
+                has_iu_gu = 'IU CODE' in df.columns and 'GU CODE' in df.columns
+                has_transport = 'TRANSPORT CODE' in df.columns
                 
-                missing_logistics = iugu_codes - logistics_codes
-                if missing_logistics and len(missing_logistics) < 10:
-                    self.warnings.append(f"Some IUGU pairs lack logistics data: {len(missing_logistics)} pairs")
+                if not (has_from_to or has_iu_gu):
+                    self.errors.append(f"LogisticsIUGU missing columns: Expected 'FROM IU CODE'+'TO IUGU CODE' or 'IU CODE'+'GU CODE'")
+                if not has_transport:
+                    self.errors.append(f"LogisticsIUGU missing 'TRANSPORT CODE' column")
                     
         except Exception as e:
             self.errors.append(f"Validation error: {str(e)}")
@@ -184,37 +183,88 @@ class ExcelDataParser:
         if 'IUGUType' not in self.data:
             return []
         df = self.data['IUGUType']
-        if 'IU CODE' not in df.columns:
+        
+        # Handle different column names
+        if 'IUGU CODE' in df.columns and 'PLANT TYPE' in df.columns:
+            # New format: filter by PLANT TYPE = 'IU'
+            iu_plants = df[df['PLANT TYPE'] == 'IU']['IUGU CODE'].unique().tolist()
+        elif 'IU CODE' in df.columns:
+            # Old format: direct IU CODE column
+            iu_plants = df['IU CODE'].unique().tolist()
+        else:
             return []
-        return sorted(df['IU CODE'].unique().tolist())
+        
+        return sorted(iu_plants)
     
     def get_destinations(self, source: str) -> List[str]:
         """Get destinations for a specific source"""
-        if 'IUGUType' not in self.data:
+        if 'LogisticsIUGU' not in self.data:
             return []
-        df = self.data['IUGUType']
-        if 'IU CODE' not in df.columns or 'GU CODE' not in df.columns:
+        df = self.data['LogisticsIUGU']
+        
+        # Handle different column naming conventions
+        if 'FROM IU CODE' in df.columns and 'TO IUGU CODE' in df.columns:
+            filtered = df[df['FROM IU CODE'] == source]
+            destinations = filtered['TO IUGU CODE'].unique().tolist()
+        elif 'IU CODE' in df.columns and 'GU CODE' in df.columns:
+            filtered = df[df['IU CODE'] == source]
+            destinations = filtered['GU CODE'].unique().tolist()
+        else:
             return []
-        filtered = df[df['IU CODE'] == source]
-        return sorted(filtered['GU CODE'].unique().tolist())
+        
+        return sorted(destinations)
     
     def get_modes(self, source: str, destination: str) -> List[Dict[str, Any]]:
         """Get transport modes for a specific route"""
         if 'LogisticsIUGU' not in self.data:
             return []
         df = self.data['LogisticsIUGU']
-        if 'IU CODE' not in df.columns or 'GU CODE' not in df.columns:
+        
+        # Handle different column naming conventions
+        if 'FROM IU CODE' in df.columns and 'TO IUGU CODE' in df.columns:
+            filtered = df[
+                (df['FROM IU CODE'] == source) & 
+                (df['TO IUGU CODE'] == destination)
+            ]
+        elif 'IU CODE' in df.columns and 'GU CODE' in df.columns:
+            filtered = df[
+                (df['IU CODE'] == source) & 
+                (df['GU CODE'] == destination)
+            ]
+        else:
             return []
         
-        filtered = df[(df['IU CODE'] == source) & (df['GU CODE'] == destination)]
+        # Filter out Sea routes (T3) if present
+        if 'TRANSPORT CODE' in filtered.columns:
+            filtered = filtered[filtered['TRANSPORT CODE'] != 'T3']
+        
+        # Mode mapping with proper names
+        mode_mapping = {
+            'T1': {'name': 'Road (T1)', 'default_capacity': 25},
+            'T2': {'name': 'Rail (T2)', 'default_capacity': 3000},
+            'T3': {'name': 'Sea (T3)', 'default_capacity': 5000},
+            'Road': {'name': 'Road', 'default_capacity': 25},
+            'Rail': {'name': 'Rail', 'default_capacity': 3000},
+        }
         
         modes = []
         for _, row in filtered.iterrows():
-            mode_code = row.get('TRANSPORT CODE', 'Unknown')
-            capacity = row.get('VEHICLE CAPACITY', row.get('CAPACITY', 'N/A'))
+            mode_code = str(row.get('TRANSPORT CODE', 'Unknown'))
+            capacity = row.get('VEHICLE CAPACITY', row.get('CAPACITY', None))
+            
+            # Get proper name and default capacity
+            mode_info = mode_mapping.get(mode_code, {
+                'name': f'Mode {mode_code}',
+                'default_capacity': 0
+            })
+            
+            # Use actual capacity from data if available, otherwise use default
+            if capacity is None or pd.isna(capacity):
+                capacity = mode_info['default_capacity']
+            
             modes.append({
-                'code': str(mode_code),
-                'name': f"Mode {mode_code}",
+                'code': mode_code,
+                'name': mode_info['name'],
                 'vehicle_capacity': capacity
             })
         

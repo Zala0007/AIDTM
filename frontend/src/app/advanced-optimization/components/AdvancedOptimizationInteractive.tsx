@@ -178,18 +178,20 @@ const AdvancedOptimizationInteractive = () => {
   const fetchSources = async () => {
     try {
       const sources = await ExcelAPI.getSources();
-      setSources(sources);
+      setSources(Array.isArray(sources) ? sources : []);
     } catch (err) {
       console.error('Failed to fetch sources:', err);
+      setSources([]);
     }
   };
 
   const fetchPeriods = async () => {
     try {
       const periods = await ExcelAPI.getPeriods();
-      setPeriods(periods);
+      setPeriods(Array.isArray(periods) ? periods : []);
     } catch (err) {
       console.error('Failed to fetch periods:', err);
+      setPeriods([]);
     }
   };
 
@@ -200,9 +202,10 @@ const AdvancedOptimizationInteractive = () => {
     }
     try {
       const destinations = await ExcelAPI.getDestinations(source);
-      setDestinations(destinations);
+      setDestinations(Array.isArray(destinations) ? destinations : []);
     } catch (err) {
       console.error('Failed to fetch destinations:', err);
+      setDestinations([]);
     }
   };
 
@@ -213,9 +216,10 @@ const AdvancedOptimizationInteractive = () => {
     }
     try {
       const modes = await ExcelAPI.getModes(source, destination);
-      setModes(modes);
+      setModes(Array.isArray(modes) ? modes : []);
     } catch (err) {
       console.error('Failed to fetch modes:', err);
+      setModes([]);
     }
   };
 
@@ -604,7 +608,7 @@ const AdvancedOptimizationInteractive = () => {
                     <span className="font-semibold text-success">Dataset Active: {dataStatus.source}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 mt-3">
-                    {dataStatus.sheets.map((sheet) => (
+                    {dataStatus.sheets && dataStatus.sheets.map((sheet) => (
                       <div key={sheet} className="px-3 py-2 bg-card rounded-lg text-sm font-medium text-foreground">
                         ✓ {sheet}
                       </div>
@@ -673,14 +677,14 @@ const AdvancedOptimizationInteractive = () => {
                       }`}
                       value={selectedSource}
                       onChange={(e) => handleSourceChange(e.target.value)}
-                      disabled={sources.length === 0}
+                      disabled={!sources || sources.length === 0}
                     >
                       <option value="">Select source...</option>
-                      {sources.map((s) => (
+                      {sources && sources.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
-                    {sources.length === 0 && (
+                    {(!sources || sources.length === 0) && (
                       <p className="mt-2 text-xs text-muted-foreground italic">{NOT_AVAILABLE}</p>
                     )}
                     {selectedSource && (
@@ -704,17 +708,17 @@ const AdvancedOptimizationInteractive = () => {
                       }`}
                       value={selectedDestination}
                       onChange={(e) => handleDestinationChange(e.target.value)}
-                      disabled={!selectedSource || destinations.length === 0}
+                      disabled={!selectedSource || !destinations || destinations.length === 0}
                     >
                       <option value="">Select destination...</option>
-                      {destinations.map((d) => (
+                      {destinations && destinations.map((d) => (
                         <option key={d} value={d}>{d}</option>
                       ))}
                     </select>
                     {!selectedSource && (
                       <p className="mt-2 text-xs text-warning italic">⚠ Select source first</p>
                     )}
-                    {selectedSource && destinations.length === 0 && (
+                    {selectedSource && (!destinations || destinations.length === 0) && (
                       <p className="mt-2 text-xs text-warning">⚠ No destinations available</p>
                     )}
                     {selectedDestination && (
@@ -738,10 +742,10 @@ const AdvancedOptimizationInteractive = () => {
                       }`}
                       value={selectedMode}
                       onChange={(e) => handleModeChange(e.target.value)}
-                      disabled={!selectedDestination || modes.length === 0}
+                      disabled={!selectedDestination || !modes || modes.length === 0}
                     >
                       <option value="">Select mode...</option>
-                      {modes.map((m) => (
+                      {modes && modes.map((m) => (
                         <option key={m.code} value={m.code}>
                           {m.name} ({m.code})
                         </option>
@@ -771,10 +775,10 @@ const AdvancedOptimizationInteractive = () => {
                       }`}
                       value={selectedPeriod}
                       onChange={(e) => handlePeriodChange(e.target.value)}
-                      disabled={periods.length === 0}
+                      disabled={!periods || periods.length === 0}
                     >
                       <option value="">Select period...</option>
-                      {periods.map((p) => (
+                      {periods && periods.map((p) => (
                         <option key={p} value={p}>Period {p}</option>
                       ))}
                     </select>
@@ -826,7 +830,7 @@ const AdvancedOptimizationInteractive = () => {
                           <div className="flex items-center gap-2">
                             <Icon name="building-office-2" className="w-4 h-4 text-primary" />
                             <span className="text-sm font-medium text-foreground">
-                              {selectedMode ? modes.find(m => m.code === selectedMode)?.name || selectedMode : 'No mode'}
+                              {selectedMode ? (modes && modes.find(m => m.code === selectedMode)?.name) || selectedMode : 'No mode'}
                             </span>
                           </div>
                           <div className="h-6 w-px bg-border" />
