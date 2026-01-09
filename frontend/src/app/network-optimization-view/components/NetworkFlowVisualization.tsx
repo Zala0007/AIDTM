@@ -16,12 +16,16 @@ interface NetworkFlowVisualizationProps {
   connections: FlowConnection[];
   selectedMode: string;
   className?: string;
+  selectedPlant?: string | null;
+  onPlantClick?: (plantName: string) => void;
 }
 
 const NetworkFlowVisualization = ({
   connections,
   selectedMode,
   className = '',
+  selectedPlant,
+  onPlantClick,
 }: NetworkFlowVisualizationProps) => {
   const [isHydrated, setIsHydrated] = useState(false);
   const [selectedConnection, setSelectedConnection] = useState<string | null>(null);
@@ -194,16 +198,33 @@ const NetworkFlowVisualization = ({
           {layout.sources.map((source) => {
             const pos = layout.sourcePos.get(source);
             if (!pos) return null;
+            const isSelected = selectedPlant === source;
             return (
-            <g key={`source-${source}`}>
+            <g 
+              key={`source-${source}`}
+              onClick={() => onPlantClick?.(source)}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <title>{source}</title>
+              {isSelected && (
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={layout.nodeRadius + 8}
+                  fill="none"
+                  stroke="var(--color-accent)"
+                  strokeWidth="3"
+                  opacity="0.5"
+                  className="animate-pulse"
+                />
+              )}
               <circle
                 cx={pos.x}
                 cy={pos.y}
                 r={layout.nodeRadius}
-                fill="var(--color-muted)"
+                fill={isSelected ? "var(--color-accent)" : "var(--color-muted)"}
                 stroke="var(--color-accent)"
-                strokeWidth="3"
+                strokeWidth={isSelected ? "4" : "3"}
               />
               <text
                 x={pos.x}
@@ -213,6 +234,7 @@ const NetworkFlowVisualization = ({
                 fill="var(--color-foreground)"
                 fontSize="12"
                 fontWeight="600"
+                pointerEvents="none"
               >
                 {shortLabel(source)}
               </text>
@@ -222,6 +244,7 @@ const NetworkFlowVisualization = ({
                 textAnchor="middle"
                 fill="var(--color-muted-foreground)"
                 fontSize="12"
+                pointerEvents="none"
               >
                 Integrated Unit
               </text>
@@ -232,16 +255,33 @@ const NetworkFlowVisualization = ({
           {layout.destinations.map((destination) => {
             const pos = layout.destPos.get(destination);
             if (!pos) return null;
+            const isSelected = selectedPlant === destination;
             return (
-            <g key={`dest-${destination}`}>
+            <g 
+              key={`dest-${destination}`}
+              onClick={() => onPlantClick?.(destination)}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <title>{destination}</title>
+              {isSelected && (
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={layout.nodeRadius + 8}
+                  fill="none"
+                  stroke="var(--color-success)"
+                  strokeWidth="3"
+                  opacity="0.5"
+                  className="animate-pulse"
+                />
+              )}
               <circle
                 cx={pos.x}
                 cy={pos.y}
                 r={layout.nodeRadius}
-                fill="var(--color-muted)"
+                fill={isSelected ? "var(--color-success)" : "var(--color-muted)"}
                 stroke="var(--color-success)"
-                strokeWidth="3"
+                strokeWidth={isSelected ? "4" : "3"}
               />
               <text
                 x={pos.x}
@@ -251,6 +291,7 @@ const NetworkFlowVisualization = ({
                 fill="var(--color-foreground)"
                 fontSize="12"
                 fontWeight="600"
+                pointerEvents="none"
               >
                 {shortLabel(destination)}
               </text>
@@ -260,6 +301,7 @@ const NetworkFlowVisualization = ({
                 textAnchor="middle"
                 fill="var(--color-muted-foreground)"
                 fontSize="12"
+                pointerEvents="none"
               >
                 Grinding Unit
               </text>

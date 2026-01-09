@@ -3,6 +3,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Icon from '@/components/ui/AppIcon';
 import * as ExcelAPI from '@/lib/excelApi';
 

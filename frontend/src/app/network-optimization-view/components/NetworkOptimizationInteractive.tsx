@@ -16,6 +16,8 @@ const NetworkOptimizationInteractive = () => {
   const [viewMode, setViewMode] = useState<'table' | 'visual' | 'hybrid'>('hybrid');
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeMessage, setOptimizeMessage] = useState<string | null>(null);
+  const [selectedPlant, setSelectedPlant] = useState<string | null>(null);
+  const [showRouteDetails, setShowRouteDetails] = useState(false);
 
   const { data: initialData, isLoading, error } = useInitialData({
     T: 4,
@@ -226,6 +228,10 @@ const NetworkOptimizationInteractive = () => {
         <NetworkFlowVisualization
           connections={flowConnections}
           selectedMode={selectedMode}
+          onPlantClick={(plant) => {
+            setSelectedPlant(plant);
+            setShowRouteDetails(true);
+          }}
         />
       )}
 
@@ -238,6 +244,10 @@ const NetworkOptimizationInteractive = () => {
           <NetworkFlowVisualization
             connections={flowConnections}
             selectedMode={selectedMode}
+            selectedPlant={selectedPlant}
+            onPlantClick={(plant) => {
+              setSelectedPlant(plant);
+            }}
           />
         </div>
       )}
@@ -246,22 +256,93 @@ const NetworkOptimizationInteractive = () => {
         <div className="flex items-center gap-2">
           <Icon name="LightBulbIcon" size={20} className="text-accent" />
           <span className="font-body text-sm text-foreground">
-            {optimizeMessage || 'Optimization ready (uses real CSV subset)'}
+            {selectedPlant ? `Selected: ${selectedPlant} - Click "Route Data" to fetch routes` : 'Click on any plant circle to select it'}
           </span>
         </div>
         <button
-          onClick={handleOptimize}
-          disabled={isOptimizing || isLoading || !!error}
-          className="flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-md font-body font-medium text-sm transition-smooth interactive-lift focus-ring hover:bg-accent/90"
+          onClick={() => {
+            if (selectedPlant) {
+              setShowRouteDetails(true);
+            }
+          }}
+          disabled={isLoading || !!error || !selectedPlant}
+          className="flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-md font-body font-medium text-sm transition-smooth interactive-lift focus-ring hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon
-            name={isOptimizing ? 'ArrowPathIcon' : 'SparklesIcon'}
+            name="MapIcon"
             size={18}
-            className={isOptimizing ? 'animate-spin' : ''}
           />
-          <span>{isOptimizing ? 'Optimizing…' : 'Optimize Network'}</span>
+          <span>Route Data</span>
         </button>
       </div>
+
+      {/* Route Details Modal */}
+      {showRouteDetails && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowRouteDetails(false)}>
+          <div className="bg-card border border-border rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div className="flex items-center gap-3">
+                <Icon name="MapIcon" size={24} className="text-accent" />
+                <h2 className="text-2xl font-heading font-bold text-foreground">
+                  {selectedPlant ? `All Routes from ${selectedPlant}` : 'All Available Routes'}
+                </h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRouteDetails(false);
+                  setSelectedPlant(null);
+                }}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <Icon name="XMarkIcon" size={24} className="text-muted-foreground" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+              <div className="space-y-4">
+                {(selectedPlant
+                  ? initialRoutes.filter(route => route.source === selectedPlant)
+                  : initialRoutes
+                ).map((route, idx) => (
+                  <div key={idx} className="p-4 bg-gradient-to-r from-accent/5 to-primary/5 border border-accent/20 rounded-lg hover:border-accent/40 transition-colors">
+                    <div className="grid grid-cols-5 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Source</p>
+                        <p className="text-sm font-bold text-foreground">{route.source}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Destination</p>
+                        <p className="text-sm font-bold text-foreground">{route.destination}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Mode</p>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                            route.mode === 'rail' ? 'bg-accent/20 text-accent' : 'bg-warning/20 text-warning'
+                          }`}>{route.modeLabel}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Cost</p>
+                        <p className="text-sm font-bold text-success">₹{route.cost.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Utilization</p>
+                        <p className="text-sm font-bold text-primary">{route.utilization}%</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {selectedPlant && initialRoutes.filter(r => r.source === selectedPlant).length === 0 && (
+                  <div className="text-center py-12">
+                    <Icon name="ExclamationCircleIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg text-muted-foreground">No routes found for {selectedPlant}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
