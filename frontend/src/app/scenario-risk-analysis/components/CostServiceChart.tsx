@@ -48,7 +48,7 @@ const CostServiceChart = ({ data, activeScenario }: CostServiceChartProps) => {
           Comparative scenario performance mapping
         </p>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <ResponsiveContainer width="100%" height={300} minHeight={300}>
         <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(74, 74, 71, 0.15)" />
           <XAxis

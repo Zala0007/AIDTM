@@ -83,7 +83,7 @@ const InventoryChart = ({
         </div>
 
         <div className="w-full h-80" aria-label={`${unitName} Inventory Time Series Chart`}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={320} minHeight={320}>
             <AreaChart
               data={data}
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}

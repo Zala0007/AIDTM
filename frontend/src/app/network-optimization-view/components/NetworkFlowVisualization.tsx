@@ -309,7 +309,7 @@ const NetworkFlowVisualization = ({
             );
           })}
 
-          {layout.visibleConnections.map((conn) => {
+          {layout.visibleConnections.map((conn, idx) => {
             const src = layout.sourcePos.get(conn.source);
             const dst = layout.destPos.get(conn.destination);
             if (!src || !dst) return null;
@@ -324,7 +324,8 @@ const NetworkFlowVisualization = ({
             const c2x = x1 + dx * 0.65;
             const d = `M ${x1} ${y1} C ${c1x} ${y1}, ${c2x} ${y2}, ${x2} ${y2}`;
 
-            const isSelected = selectedConnection === conn.id;
+            const uniqueKey = `${conn.id}-${idx}`;
+            const isSelected = selectedConnection === uniqueKey;
             const strokeWidth = getUtilizationWidth(conn.utilization);
 
             const markerId =
@@ -336,8 +337,8 @@ const NetworkFlowVisualization = ({
 
             return (
               <g
-                key={conn.id}
-                onMouseEnter={() => setSelectedConnection(conn.id)}
+                key={uniqueKey}
+                onMouseEnter={() => setSelectedConnection(uniqueKey)}
                 onMouseLeave={() => setSelectedConnection(null)}
                 className={`cursor-pointer transition-smooth ${modeClass(conn.mode)}`}
               >
