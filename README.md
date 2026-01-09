@@ -5,6 +5,7 @@
 [![Status: Active](https://img.shields.io/badge/status-active-success.svg)]()
 
 Multi-Period MILP Model for Cement Industry (IU–GU Network)
+
 📌 Project Overview
 
 This project is a data-driven supply chain optimization system for clinker allocation and transportation in the cement manufacturing industry.
