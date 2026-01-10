@@ -15,7 +15,7 @@ services:
       - key: DEBUG
         value: false
       - key: ALLOWED_ORIGINS
-        value: https://clinkerflow-optimization.vercel.app,https://clinkerflow-optimization-*.vercel.app
+        value: https://clinkerflow-optimization.vercel.app
         sync: false
       - key: SECRET_KEY
         generateValue: true
