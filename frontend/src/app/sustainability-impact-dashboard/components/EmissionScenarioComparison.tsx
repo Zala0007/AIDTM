@@ -1,3 +1,5 @@
+'use client';
+
 import { TransportDataPoint } from '@/lib/optimizerApi';
 import Icon from '@/components/ui/AppIcon';
 

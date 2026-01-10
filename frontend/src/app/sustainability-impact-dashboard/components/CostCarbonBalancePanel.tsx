@@ -1,3 +1,5 @@
+'use client';
+
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { TransportDataPoint } from '@/lib/optimizerApi';
 
