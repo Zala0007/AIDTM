@@ -725,7 +725,7 @@ const AdvancedOptimizationInteractive = () => {
                       <option value="">Select mode...</option>
                       {modes && modes.map((m) => (
                         <option key={m.code} value={m.code}>
-                          {m.code}
+                          {m.name}
                         </option>
                       ))}
                     </select>
@@ -760,7 +760,7 @@ const AdvancedOptimizationInteractive = () => {
                     >
                       <option value="">Select period...</option>
                       {periods && periods.map((p) => (
-                        <option key={p} value={p}>{p}</option>
+                        <option key={p} value={p}>Period {p}</option>
                       ))}
                     </select>
                     {(!periods || periods.length === 0) && (
