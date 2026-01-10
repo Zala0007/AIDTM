@@ -69,3 +69,10 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
+
+# Add production CORS origins
+cors_origins = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else [
+    "http://localhost:3003",
+    "https://your-app.vercel.app",  # Add your Vercel domain
+    "https://*.vercel.app"
+]
