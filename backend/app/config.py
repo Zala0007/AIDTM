@@ -57,7 +57,15 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> List[str]:
         """Parse CORS origins from comma-separated string."""
-        return [origin.strip() for origin in self.allowed_origins.split(",")]
+        origins = [origin.strip() for origin in self.allowed_origins.split(",")]
+        # Filter out wildcard patterns as they need regex handling
+        return [o for o in origins if '*' not in o]
+    
+    @property
+    def cors_origin_regex(self) -> str:
+        """Create regex pattern for wildcard origins."""
+        # Support both exact domains and Vercel preview deployments
+        return r"https://clinkerflow-optimization.*\.vercel\.app|http://localhost:\d+|http://127\.0\.0\.1:\d+"
     
     @property
     def is_production(self) -> bool:
