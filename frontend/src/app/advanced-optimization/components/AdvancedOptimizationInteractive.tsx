@@ -255,6 +255,13 @@ const AdvancedOptimizationInteractive = () => {
         selectedPeriod
       );
       
+      console.log('Route data received:', data);
+      console.log('Has decision_variables?', !!data.decision_variables);
+      console.log('Has objective_function?', !!data.objective_function);
+      console.log('Has constraints?', !!data.constraints);
+      console.log('Has mass_balance?', !!data.mass_balance);
+      console.log('Success flag:', data.success);
+      
       // Ensure random loading time (25-35 seconds)
       const elapsed = Date.now() - startTime;
       const remainingTime = Math.max(0, randomDuration - elapsed);
@@ -266,6 +273,7 @@ const AdvancedOptimizationInteractive = () => {
       setRouteData(data);
     } catch (err) {
       console.error('Failed to fetch route data:', err);
+      setError('Failed to fetch route data. Please try again.');
       
       // Still wait for remaining time even on error
       const elapsed = Date.now() - startTime;
@@ -899,6 +907,13 @@ const AdvancedOptimizationInteractive = () => {
 
             {routeData && !loading && (
               <div className="space-y-6">
+                {/* Debug Info - Remove in production */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="font-mono text-xs">Route Data Keys: {Object.keys(routeData).join(', ')}</p>
+                  </div>
+                )}
+                
                 {/* Feasibility Banner - Only show if solution is feasible */}
                 {routeData.feasibility && routeData.feasibility.is_feasible && (
                   <div className="p-6 rounded-xl border-2 flex items-center gap-4 bg-success/10 border-success/30">

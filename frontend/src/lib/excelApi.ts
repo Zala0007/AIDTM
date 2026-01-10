@@ -52,10 +52,85 @@ export interface AdvancedMetrics {
 }
 
 export interface RouteData {
+  success: boolean;
   source: string;
   destination: string;
   mode: string;
   period: string;
+  feasibility?: {
+    is_feasible: boolean;
+    issues: string[];
+  };
+  decision_variables?: {
+    [key: string]: {
+      name: string;
+      value: number;
+      unit: string;
+      description: string;
+      formula?: string;
+    };
+  };
+  objective_function?: {
+    type: string;
+    formula: string;
+    components: Array<{
+      name: string;
+      value: number;
+      formula: string;
+      calculation?: string;
+      breakdown?: any;
+    }>;
+    total_cost: number;
+    cost_per_ton: number;
+  };
+  mass_balance?: {
+    source: {
+      opening_inventory: number;
+      production: number;
+      inbound: number;
+      outbound: number;
+      demand: number;
+      ending_inventory: number;
+      equation: string;
+    };
+    destination: {
+      opening_inventory: number;
+      production: number;
+      inbound: number;
+      outbound: number;
+      demand: number;
+      ending_inventory: number;
+      equation: string;
+    };
+  };
+  constraints?: {
+    [key: string]: {
+      name: string;
+      formula: string;
+      lhs?: number;
+      rhs?: number;
+      satisfied: boolean;
+      slack?: number;
+      utilization_pct?: number;
+      safety_stock?: number;
+      current?: number;
+      max_capacity?: number | string;
+      vehicle_capacity?: string;
+    };
+  };
+  strategic_constraints?: Array<{
+    bound: string;
+    value_type: string;
+    value: number;
+    transport: string;
+  }>;
+  metrics?: {
+    [key: string]: any;
+  };
+  raw_data?: {
+    [key: string]: any;
+  };
+  // Legacy fields for backward compatibility
   freight_cost?: number | string;
   handling_cost?: number | string;
   transport_capacity?: number | string;
@@ -63,8 +138,8 @@ export interface RouteData {
   destination_demand?: number;
   production_cost?: number | string;
   source_opening_stock?: number;
-  data_completeness: DataCompleteness;
-  advanced_metrics: AdvancedMetrics;
+  data_completeness?: DataCompleteness;
+  advanced_metrics?: AdvancedMetrics;
 }
 
 export interface MathematicalModel {
