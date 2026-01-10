@@ -2,7 +2,9 @@
 (function() {
   'use strict';
   
-  const isDevelopment = process.env.NODE_ENV !== 'production';
+  // Check if we're in development by looking at the hostname
+  const isDevelopment = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   
   // Enhanced console logger
   const logger = {

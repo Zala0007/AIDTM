@@ -29,7 +29,10 @@ const SustainabilityDashboardInteractive = ({
       setError(null);
       try {
         const response = await fetchSustainabilityData(selectedPeriod);
-        setData(response.data);
+        // Backend returns {success: true, data: {period: "monthly", data: [...]}}
+        // We need to extract the inner data array
+        const dataArray = response.data?.data || response.data || [];
+        setData(Array.isArray(dataArray) ? dataArray : []);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         setError(message);
@@ -42,9 +45,9 @@ const SustainabilityDashboardInteractive = ({
     loadData();
   }, [selectedPeriod]);
 
-  const filteredData = data.filter((item) =>
+  const filteredData = Array.isArray(data) ? data.filter((item) =>
     selectedModes.includes(item.mode)
-  );
+  ) : [];
 
   const totalEmissions = filteredData.reduce((sum, item) => sum + item.totalEmissions, 0);
   const totalCost = filteredData.reduce((sum, item) => sum + item.cost, 0);
