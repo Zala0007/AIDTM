@@ -732,8 +732,11 @@ const AdvancedOptimizationInteractive = () => {
                     {!selectedDestination && (
                       <p className="mt-2 text-xs text-warning italic">⚠ Select destination first</p>
                     )}
+                    {selectedDestination && (!modes || modes.length === 0) && (
+                      <p className="mt-2 text-xs text-warning">⚠ No transport modes available for this route</p>
+                    )}
                     {selectedMode && (
-                      <p className="mt-2 text-xs text-success font-medium">✓ Mode selected</p>
+                      <p className="mt-2 text-xs text-success font-medium">✓ Mode selected: {modes.find(m => m.code === selectedMode)?.name || selectedMode}</p>
                     )}
                   </div>
 
@@ -760,8 +763,14 @@ const AdvancedOptimizationInteractive = () => {
                         <option key={p} value={p}>Period {p}</option>
                       ))}
                     </select>
+                    {(!periods || periods.length === 0) && (
+                      <p className="mt-2 text-xs text-warning">⚠ No time periods available</p>
+                    )}
+                    {periods && periods.length > 0 && !selectedPeriod && (
+                      <p className="mt-2 text-xs text-muted-foreground">{periods.length} period{periods.length !== 1 ? 's' : ''} available</p>
+                    )}
                     {selectedPeriod && (
-                      <p className="mt-2 text-xs text-success font-medium">✓ Period selected</p>
+                      <p className="mt-2 text-xs text-success font-medium">✓ Period {selectedPeriod} selected</p>
                     )}
                   </div>
                 </div>
