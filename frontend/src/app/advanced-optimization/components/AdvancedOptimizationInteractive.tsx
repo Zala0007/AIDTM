@@ -725,7 +725,7 @@ const AdvancedOptimizationInteractive = () => {
                       <option value="">Select mode...</option>
                       {modes && modes.map((m) => (
                         <option key={m.code} value={m.code}>
-                          {m.name} ({m.code})
+                          {m.code}
                         </option>
                       ))}
                     </select>
@@ -736,7 +736,7 @@ const AdvancedOptimizationInteractive = () => {
                       <p className="mt-2 text-xs text-warning">⚠ No transport modes available for this route</p>
                     )}
                     {selectedMode && (
-                      <p className="mt-2 text-xs text-success font-medium">✓ Mode selected: {modes.find(m => m.code === selectedMode)?.name || selectedMode}</p>
+                      <p className="mt-2 text-xs text-success font-medium">✓ {selectedMode} selected</p>
                     )}
                   </div>
 
@@ -760,7 +760,7 @@ const AdvancedOptimizationInteractive = () => {
                     >
                       <option value="">Select period...</option>
                       {periods && periods.map((p) => (
-                        <option key={p} value={p}>Period {p}</option>
+                        <option key={p} value={p}>{p}</option>
                       ))}
                     </select>
                     {(!periods || periods.length === 0) && (
