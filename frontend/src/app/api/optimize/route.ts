@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 function getBackendBaseUrl() {
-  const raw = process.env.OPTIMIZER_API_BASE_URL || 'http://localhost:8000';
+  const raw = process.env.NEXT_PUBLIC_API_URL || process.env.OPTIMIZER_API_BASE_URL || 'http://localhost:8003';
   return raw.replace(/\/+$/, '');
 }
 

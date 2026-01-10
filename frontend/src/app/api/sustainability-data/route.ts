@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 function getBackendBaseUrl() {
-  const raw = process.env.OPTIMIZER_API_BASE_URL || 'http://localhost:8000';
+  const raw = process.env.NEXT_PUBLIC_API_URL || process.env.OPTIMIZER_API_BASE_URL || 'http://localhost:8003';
   return raw.replace(/\/+$/, '');
 }
 
@@ -9,12 +9,14 @@ export async function GET(req: Request) {
   const backendBaseUrl = getBackendBaseUrl();
   const url = new URL(req.url);
 
-  const candidateBaseUrls = Array.from(
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const candidateBaseUrls = isDevelopment ? Array.from(
     new Set([
       backendBaseUrl,
-      backendBaseUrl.includes('localhost') ? backendBaseUrl.replace('localhost', '127.0.0.1') : 'http://localhost:8000',
+      'http://localhost:8003',
+      'http://127.0.0.1:8003',
     ])
-  );
+  ) : [backendBaseUrl];
 
   try {
     let lastError: unknown;

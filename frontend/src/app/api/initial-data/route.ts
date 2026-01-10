@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
 function getBackendBaseUrl() {
-  // Server-side env var (not exposed to the browser)
-  const raw = process.env.OPTIMIZER_API_BASE_URL || 'http://localhost:8000';
+  // Use NEXT_PUBLIC_API_URL for production or fall back to local dev
+  const raw = process.env.NEXT_PUBLIC_API_URL || process.env.OPTIMIZER_API_BASE_URL || 'http://localhost:8003';
   return raw.replace(/\/+$/, '');
 }
 
@@ -10,15 +10,18 @@ export async function GET(req: Request) {
   const backendBaseUrl = getBackendBaseUrl();
   const url = new URL(req.url);
 
-  const candidateBaseUrls = Array.from(
+  // In production, use only the configured backend URL
+  // In development, try common local ports
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const candidateBaseUrls = isDevelopment ? Array.from(
     new Set([
       backendBaseUrl,
-      // Common local fallback
-      backendBaseUrl.includes('localhost') ? backendBaseUrl.replace('localhost', '127.0.0.1') : 'http://localhost:8000',
-      'http://localhost:8001',
+      'http://localhost:8003',
+      'http://127.0.0.1:8003',
+      'http://localhost:8000',
       'http://127.0.0.1:8001',
     ])
-  );
+  ) : [backendBaseUrl];
 
   try {
     let lastError: unknown;

@@ -1,11 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   productionBrowserSourceMaps: true,
-  distDir: process.env.DIST_DIR || '.next',  typescript: {
+  distDir: process.env.DIST_DIR || '.next', typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  output: 'standalone', // Optional: reduces deployment size
+  images: {
+    domains: [], // Add any external image domains if needed
+  },
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
   images: {
     remotePatterns: [
