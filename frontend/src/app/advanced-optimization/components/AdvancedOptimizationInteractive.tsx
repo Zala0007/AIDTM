@@ -225,29 +225,18 @@ const AdvancedOptimizationInteractive = () => {
 
   const fetchRouteData = async () => {
     if (!selectedSource || !selectedDestination || !selectedMode || !selectedPeriod) {
+      setError('Please select all route parameters');
       return;
     }
+    
     setLoading(true);
+    setError(null);
+    setRouteData(null);
     const startTime = Date.now();
     
-    // Random loading duration between 10-15 seconds - unpredictable for user
-    const loadingDurations = [10, 11, 12, 13, 14, 15];
-    const randomDuration = loadingDurations[Math.floor(Math.random() * loadingDurations.length)] * 1000;
-    
-    // Initial log at 3ms
-    console.log(`[Fast Refresh] done in 3ms`);
-    
-    // Start real-time backend logging tracking actual elapsed time
-    let loggingActive = true;
-    const logInterval = setInterval(() => {
-      if (loggingActive) {
-        const elapsedSeconds = (Date.now() - startTime) / 1000; // Get seconds
-        const elapsedMs = Math.floor(elapsedSeconds * 60); // Convert using *60
-        console.log(`[Fast Refresh] done in ${elapsedMs}ms`);
-      }
-    }, Math.random() * 2000 + 1500); // Random interval between 1.5-3.5 seconds
-    
     try {
+      console.log('Fetching route data for:', { selectedSource, selectedDestination, selectedMode, selectedPeriod });
+      
       const data = await ExcelAPI.getRouteData(
         selectedSource,
         selectedDestination,
@@ -255,39 +244,26 @@ const AdvancedOptimizationInteractive = () => {
         selectedPeriod
       );
       
-      console.log('Route data received:', data);
+      const elapsedMs = Date.now() - startTime;
+      console.log('Route data received in', elapsedMs, 'ms');
+      console.log('Route data:', data);
       console.log('Has decision_variables?', !!data.decision_variables);
       console.log('Has objective_function?', !!data.objective_function);
       console.log('Has constraints?', !!data.constraints);
       console.log('Has mass_balance?', !!data.mass_balance);
       console.log('Success flag:', data.success);
       
-      // Ensure random loading time (25-35 seconds)
-      const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, randomDuration - elapsed);
-      
-      if (remainingTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      if (data.success === false) {
+        setError(data.error || 'Optimization failed');
+        return;
       }
       
       setRouteData(data);
-    } catch (err) {
-      console.error('Failed to fetch route data:', err);
-      setError('Failed to fetch route data. Please try again.');
-      
-      // Still wait for remaining time even on error
-      const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, randomDuration - elapsed);
-      if (remainingTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, remainingTime));
-      }
+    } catch (err: any) {
+      const elapsedMs = Date.now() - startTime;
+      console.error('Failed to fetch route data after', elapsedMs, 'ms:', err);
+      setError(err.message || 'Failed to fetch route data. Please try again.');
     } finally {
-      // Stop logging and show final time
-      loggingActive = false;
-      clearInterval(logInterval);
-      const finalElapsedSeconds = (Date.now() - startTime) / 1000;
-      const finalElapsedMs = Math.floor(finalElapsedSeconds * 60);
-      console.log(`[Fast Refresh] done in ${finalElapsedMs}ms`);
       setLoading(false);
     }
   };
@@ -340,12 +316,6 @@ const AdvancedOptimizationInteractive = () => {
   const isSelectionComplete = () => {
     return selectedSource && selectedDestination && selectedMode && selectedPeriod;
   };
-
-  useEffect(() => {
-    if (selectedSource && selectedDestination && selectedMode && selectedPeriod) {
-      fetchRouteData();
-    }
-  }, [selectedSource, selectedDestination, selectedMode, selectedPeriod]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -863,6 +833,18 @@ const AdvancedOptimizationInteractive = () => {
                     </div>
                   </div>
                 </div>
+                
+                {/* Optimize Route Button */}
+                <div className="mt-6 flex items-center justify-center">
+                  <button
+                    onClick={fetchRouteData}
+                    disabled={!isSelectionComplete() || loading}
+                    className="px-12 py-4 bg-gradient-to-r from-accent to-primary text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 group"
+                  >
+                    <Icon name="play" className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    <span>{loading ? 'Optimizing...' : 'Optimize Route'}</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -882,7 +864,10 @@ const AdvancedOptimizationInteractive = () => {
                       Optimizing Route...
                     </p>
                     <p className="text-base text-muted-foreground">
-                      Running MILP calculations on backend
+                      Running MILP solver • Calculating optimal decisions
+                    </p>
+                    <p className="text-sm text-muted-foreground/70">
+                      {selectedSource} → {selectedDestination} • {selectedMode} • Period {selectedPeriod}
                     </p>
                   </div>
                   
@@ -890,15 +875,15 @@ const AdvancedOptimizationInteractive = () => {
                   <div className="flex items-center gap-3 mt-4">
                     <div className="flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full">
                       <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-                      <span className="text-sm text-accent font-medium">Loading data</span>
+                      <span className="text-sm text-accent font-medium">Fetching constraints</span>
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
                       <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                      <span className="text-sm text-primary font-medium">Computing solution</span>
+                      <span className="text-sm text-primary font-medium">Solving MILP</span>
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 bg-success/10 rounded-full">
                       <div className="w-2 h-2 bg-success rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                      <span className="text-sm text-success font-medium">Analyzing metrics</span>
+                      <span className="text-sm text-success font-medium">Computing metrics</span>
                     </div>
                   </div>
                 </div>

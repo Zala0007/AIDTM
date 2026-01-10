@@ -53,6 +53,8 @@ export interface AdvancedMetrics {
 
 export interface RouteData {
   success: boolean;
+  error?: string;
+  traceback?: string;
   source: string;
   destination: string;
   mode: string;
